@@ -1,0 +1,39 @@
+extends program
+
+block title
+  #{title}
+
+append top
+  h1 #{title} 
+    small by #{author}
+  blockquote!= md(escape(description))
+  p
+    strong Views: 
+    span #{views}
+    span &nbsp;-&nbsp;
+    strong Submitted: 
+    span= moment(date).fromNow()
+    - if(fork)
+      span &nbsp;-&nbsp;
+      strong Forked from: 
+      a(href="/#{fork}")
+        span #{fork}
+    - if(typeof forked === 'number')
+      span &nbsp;-&nbsp;
+      a(href="/forks/#{id}") Programs forked from this
+  div.btn-group
+    a#download.btn.btn-info(href="/download/#{id}")
+      i.icon-download-alt.icon-white
+      span Download
+    a#raw.btn.btn-info(href="/raw/#{id}")
+      i.icon-file.icon-white
+      span Raw
+    a#fork.btn.btn-info(href="/fork/#{id}")
+      i.icon-pencil.icon-white
+      span Make Editable Copy
+
+append scripts
+  script(type="text/javascript").
+    $(function() {
+      window.editor.setOption('readOnly', true);
+    });

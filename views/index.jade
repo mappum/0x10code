@@ -1,0 +1,156 @@
+doctype 5
+html(lang='en')
+  head
+    title 0x10co.de - 
+      block title
+      | The easy DCPU-16 sharer
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    link(href="/bootstrap/css/bootstrap.css", rel="stylesheet")
+    link(href="/bootstrap/css/bootstrap-responsive.css", rel="stylesheet")
+    link(href="/css/codemirror.css", rel="stylesheet")
+    link(href="/css/style.css", rel="stylesheet")
+  body
+    div.navbar
+      div.navbar-inner
+        div.container-fluid
+          a.brand(href="http://0x10co.de")
+            img(src="/img/logo.png")
+          div.nav-collapse.collapse
+            ul.nav
+              pages = {'new':'New Program', 'top':'Top Programs', 'random':'Random'}
+              each v, k in pages
+                - if(current == k)
+                  li.active: a(href="#{k}") #{v}
+                - else
+                  li: a(href="#{k}") #{v}
+    div.container-fluid
+      div.row-fluid
+        div.span9
+          div.alert.alert-warning
+            strong Hey! 
+            span If input does not work in a program, that means the program was not written to work with Notch's input system, described 
+              a(href="http://www.reddit.com/r/dcpu16/comments/s3086/correct_way_of_accessing_keyboard/c4aomtn") here.
+          block content
+        div.span3
+          block sidebar
+            - if(typeof recent !== 'undefined')
+                div.accordion-group
+                  div.accordion-heading
+                    a.accordion-toggle(data-toggle="collapse", data-target="#recent") Recent Programs
+                    div#recent.collapse.in.accordion-body.inset
+                      div.accordion-inner
+                        ul.reference
+                        - for(var i = 0; i < recent.length; i++)
+                          li
+                            a(href="/#{recent[i].id}")
+                              div
+                                strong #{recent[i].title} 
+                                small #{recent[i].author}
+                                br
+                                i= recent.moment(recent[i].date).fromNow()
+            div.accordion-group
+              div.accordion-heading
+                a.accordion-toggle(data-toggle="collapse", data-target="#reference") DCPU16 Quick Reference
+                div#reference.collapse.accordion-body.inset
+                  div.accordion-inner
+                    h4 Basic Opcodes
+                    ul.reference
+                      li
+                        code SET a, b
+                        span &nbsp;sets a to b
+                      li
+                        code ADD a, b
+                        span &nbsp;sets a to a+b, sets O to 0x0001 if there's an overflow, 0x0 otherwise
+                      li
+                        code SUB a, b
+                        span &nbsp;sets a to a-b, sets O to 0xffff if there's an underflow, 0x0 otherwise
+                      li
+                        code MUL a, b
+                        span &nbsp;sets a to a*b, sets O to ((a*b)>>16)&0xffff
+                      li
+                        code DIV a, b
+                        span &nbsp;sets a to a/b, sets O to ((a<<16)/b)&0xffff. if b==0, sets a and O to 0 instead.
+                      li
+                        code MOD a, b
+                        span &nbsp;sets a to a%b. if b==0, sets a to 0 instead.
+                      li
+                        code SHL a, b
+                        span &nbsp;sets a to a<<b, sets O to ((a<<16)>>b)&0xffff
+                      li
+                        code SHR a, b
+                        span &nbsp;sets a to a>>b, sets O to ((a<<16)>>b)&0xffff
+                      li
+                        code AND a, b
+                        span &nbsp;sets a to a&b
+                      li
+                        code BOR a, b
+                        span &nbsp;sets a to a|b
+                      li
+                        code XOR a, b
+                        span &nbsp;sets a to a^b
+                      li
+                        code IFE a, b
+                        span &nbsp;performs next instruction only if a==b
+                      li
+                        code IFN a, b
+                        span &nbsp;performs next instruction only if a!=b
+                      li
+                        code IFG a, b
+                        span &nbsp;performs next instruction only if a>b
+                      li
+                        code IFB a, b
+                        span &nbsp;performs next instruction only if (a&b)!=0
+                    h4 Non-basic Opcodes
+                    ul.reference
+                      li
+                        code JSR a
+                        span &nbsp;pushes the address of the next instruction to the stack, then sets PC to a
+                      li
+                        code BRK
+                        span &nbsp;stops execution (non-standard)
+                    h4 Registers
+                    ul.reference
+                      li
+                        code A
+                        span , 
+                        code B
+                        span , 
+                        code C
+                        span , 
+                        code X
+                        span , 
+                        code Y
+                        span , 
+                        code Z
+                        span , 
+                        code I
+                        span , 
+                        code J
+                    h4 Other Values
+                    ul.reference
+                      li: code POP / [SP++]
+                      li: code PEEK / [SP]
+                      li: code PUSH / [--SP]
+                      li 
+                        code SP
+                        span , 
+                        code PC
+                        span , 
+                        code O
+                      
+    hr
+    div.container-fluid
+      block footer
+        p &copy; Matt Bell (mappum) 2012 - 
+          a(href="http://github.com/mappum/DCPU-16") DCPU16 code 
+    block scripts
+      script(src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js")
+      script(src="/bootstrap/js/bootstrap-transition.js")
+      script(src="/bootstrap/js/bootstrap-alert.js")
+      script(src="/bootstrap/js/bootstrap-modal.js")
+      script(src="/bootstrap/js/bootstrap-dropdown.js")
+      script(src="/bootstrap/js/bootstrap-tooltip.js")
+      script(src="/bootstrap/js/bootstrap-popover.js")
+      script(src="/bootstrap/js/bootstrap-button.js")
+      script(src="/bootstrap/js/bootstrap-collapse.js")
+      script(src="/js/analytics.js")

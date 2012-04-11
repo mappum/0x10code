@@ -1,0 +1,142 @@
+body {
+	padding-bottom: 40px;
+}
+.navbar .brand {
+	padding: 0;
+	margin-left: 0;
+	margin-right: 16px;
+}
+.navbar-inner {
+	-webkit-border-radius: 0;
+	-moz-border-radius: 0;
+	border-radius: 0;
+	padding: 0;
+}
+.sidebar-nav {
+	padding: 9px 0;
+}
+.container-fluid {
+	padding-left: 30px;
+	padding-right: 30px;
+}
+.inset {
+	background-color: #f5f5f5;
+	border: 1px solid #EEE;
+	border: 1px solid rgba(0, 0, 0, 0.05);
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+	-webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+	-moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+.CodeMirror-gutter {
+	background: #e7e7e7;
+}
+.CodeMirror-scroll {
+	height: auto;
+	min-height: 345px;
+	overflow-y: hidden;
+	overflow-x: auto;
+	width: 100%
+}
+.CodeMirror-fullscreen {
+	background: #fff;
+	display: block;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 9999;
+	margin: 0;
+	padding: 0;
+	border: 0px solid #BBBBBB;
+	opacity: 1;
+}
+.activeLine {
+	background: #efefef !important;
+}
+.pcLine {
+	background: #a0ffa0 !important;
+}
+.errorLine {
+	background: #cc4444 !important;
+}
+#editor {
+	height: auto;
+}
+#debugger {
+	margin-bottom: 16px;
+	font-family: monospace;
+}
+#debugger table {
+	margin-top: 10px;
+}
+#savePanel {
+	margin-bottom: 10px;
+}
+#savePanel .spacer {
+	margin: 10px;
+}
+#savePanel textarea {
+	margin-top: 0;
+}
+#saveAlert {
+	margin-bottom: 10px;
+}
+#recent li {
+	padding: 2px;
+}
+#recent {
+	list-style: none;
+	margin: 0;
+}
+#recent li:nth-child(odd) {
+	background: #fff;
+}
+#recent a {
+	color: #444;
+}
+#canvas {
+	background: #2b2b2b;
+}
+ul.reference {
+	list-style: none;
+	margin: 0;
+}
+ul.reference li {
+	padding: 5px;
+}
+ul.reference li:nth-child(odd) {
+	background: #fff;
+}
+ul.list li {
+	padding: 6px;
+}
+ul.list a {
+	color: #666;
+}
+ul.list li:nth-child(odd) {
+	background: #eee;
+}
+div.accordion-heading {
+	background: #fff;
+}
+a.accordion-toggle {
+	cursor: pointer;
+}
+.margined {
+	margin: 10px;
+}
+pre.console {
+	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6) inset;
+	border-top: 1px solid #000;
+	width: auto;
+	min-width: 400px;
+	padding: 12px;
+	background: #333;
+	color: #fff;
+	font-size: 20px;
+	text-align: center;
+}

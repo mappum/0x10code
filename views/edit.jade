@@ -1,0 +1,36 @@
+extends program
+
+append top
+  - if(current == 'edit')
+    h1 #{title} 
+      small by #{author}
+    blockquote
+      #{description}
+  div.btn-group
+    button#info.btn.btn-info(data-toggle="button")
+      i.icon-chevron-down.icon-white
+      span Post Options
+    button#save.btn.btn-info
+      i.icon-share.icon-white
+      span Post
+
+prepend left
+  div#saveAlert.alert.alert-error(style="display:none")
+    strong Oh no! 
+    span An error occurred while trying to save your code. :(
+  div#savePanel.collapse.inset(style="display:none")
+    div.spacer
+      div.input-prepend
+        span.add-on: i.icon-font
+        input#saveTitle.span3(type="text", placeholder="title (optional)")
+      div.input-prepend
+        span.add-on: i.icon-user
+        input#saveAuthor.span3(type="text", placeholder="author (optional)")
+      textarea#saveDescription.span4(rows="6", placeholder="description (optional)")
+      div.input-prepend
+        span.add-on: i.icon-lock
+        input#savePassword.span2(type="password", placeholder="password (optional)")
+      - if(typeof id !== 'undefined')
+        input#saveId(type="hidden", value="#{id}")
+      - if(current === 'fork')
+        input#saveFork(type="hidden", value="#{fork}")
