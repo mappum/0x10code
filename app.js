@@ -32,27 +32,37 @@ for(var i = 0; i < resources.length; i++) {
 	});
 }
 
-function getRecent(callback) {
+function renderWithRecent(type, o, callback) {
 	programDb.sort('date', function(err, recent) {
 		recent.moment = moment;
-		callback(err, recent);
+
+		o.recent = recent;
+		res.render(type, o);
+
+		if (callback) callback(o);
 	}, {password: ''});
+}
+
+function incrementViews(program) {
+	program.views++;
+	program.save();
 }
 
 app.get('/top', function(req, res) {
 	programDb.sort('views', function(err, posts) {
-		getRecent(function(err, recent) {
-			res.render('list', {posts: posts, current:'top', recent: recent, moment: moment, title: 'Top Programs'});
+		renderWithRecent('list', {
+			current: 'top',
+			posts: posts,
+			moment: moment,
+			title: 'Top Programs'
 		});
 	}, {password: ''});
 });
 
 app.get('/random', function(req, res) {
 	programDb.get({password:''}, function(err, posts) {
-		getRecent(function(err, recent) {
-			var program = posts[Math.floor(posts.length * Math.random())];
-			res.redirect('/' + program.id);
-		});
+		var program = posts[Math.floor(posts.length * Math.random())];
+		res.redirect('/' + program.id);
 	});
 });
 
@@ -65,59 +75,53 @@ app.get('/new', function(req, res) {
 });
 
 app.get('/:id', function(req, res) {
-	getRecent(function(err, recent) {
-		programDb.get(req.params.id, function(err, program) {
-			programDb.get({fork: req.params.id, password: ''}, function(err, forks) {
-				if(program) {
-					if(program.password.length === 0) {
-						program.current = 'program';
-						program.md = md;
-						program.recent = recent;
-						program.moment = moment;
-						if(forks.length > 0) program.forked = forks.length;
-						res.render('noedit', program);
-						program.views++;
-						program.save();
-					} else {
-						program.current = 'program';
-						program.recent = recent;
-						res.render('password', program);
-					}
-				} else {
-					res.render('edit', {current: '', id: req.params.id});
-				}
-			});
+	programDb.get(req.params.id, function(err, program) {
+		if(!program) {
+			res.render('edit', {current: '', id: req.params.id});
+			return;
+		}
+
+		program.current = 'program';
+
+		if(program.password.length > 0) {
+			renderWithRecent('password', program);
+			return;
+		}
+
+		programDb.get({fork: req.params.id, password: ''}, function(err, forks) {
+			if(forks.length > 0) program.forked = forks.length;
+
+			program.md = md;
+			program.moment = moment;
+
+			renderWithRecent('noedit', program, incrementViews);
 		});
 	});
 });
 
 app.post('/:id', function(req, res) {
-	getRecent(function(err, recent) {
-		programDb.get(req.params.id, function(err, program) {
-			programDb.get({fork: req.params.id, password: ''}, function(err, forks) {
-				if(req.body.password === program.password) {
-					program.current = 'program';
-					program.recent = recent;
-					program.md = md;
-					program.moment = moment;
-					if(forks.length > 0) program.forked = forks.length;
-					res.render('noedit', program);
-					program.views++;
-					program.save();
-				} else {
-					program.current = 'program';
-					program.recent = getRecent();
-					res.render('password', program);
-				}
-			});
+	programDb.get(req.params.id, function(err, program) {
+		program.current = 'program';
+
+		if(req.body.password !== program.password) {
+			renderWithRecent('password', program);
+			return;
+		}
+
+		programDb.get({fork: req.params.id, password: ''}, function(err, forks) {
+			if(forks.length > 0) program.forked = forks.length;
+
+			program.md = md;
+			program.moment = moment;
+
+			renderWithRecent('noedit', program, incrementViews);
 		});
 	});
 });
 
 app.get('/raw/:id', function(req, res) {
 	programDb.get(req.params.id, function(err, program) {
-		if(program) res.end(program.code);
-		else res.end('');
+		res.end(program.code || '');
 	});
 });
 
@@ -126,48 +130,53 @@ app.get('/download/:id', function(req, res) {
 		if(program) {
 			res.header('Content-Disposition', 'attachment');
 			res.header('filename', url.format(program.title + '.asm'));
-			res.end(program.code);
-		} else res.end('');
+		}
+
+		res.end(program.code || '');
 	});
 });
 
 app.get('/fork/:id', function(req, res) {
-	getRecent(function(err, recent) {
-		programDb.get(req.params.id, function(err, program) {
-			if(program) {
-				res.render('edit', {current: 'fork', code: program.code, recent: recent,
-					fork: req.params.id});
-			} else {
-				res.render('edit', {current: '', recent: recent});
-			}
-		});
+	programDb.get(req.params.id, function(err, program) {
+		if (program) {
+			renderWithRecent('edit', {
+				current: 'fork',
+				code: program.code,
+				fork: req.params.id
+			});
+		} else {
+			renderWithRecent('edit', {
+				current: ''
+			});
+		}
 	});
 });
 
 app.get('/forks/:id', function(req, res) {
-	getRecent(function(err, recent) {
-		programDb.get({fork: req.params.id, password: ''}, function(err, programs) {
-			res.render('list', {posts: programs, current:'forks', recent: recent, moment: moment,
-				title: 'Forks of ' + req.params.id});
+	programDb.get({fork: req.params.id, password: ''}, function(err, programs) {
+		renderWithRecent('list', {
+			posts: programs,
+			current: 'forks',
+			moment: moment,
+			title: 'Forks of ' + req.params.id
 		});
 	});
 });
 
 app.post('/', function(req, res) {
 	programDb.set(req.body, function(err, program) {
-		if(!err) {
-			res.end('http://0x10co.de/' + program.id);
-		} else {
+		if(err) {
 			console.log(err);
 			res.end('', 404);
+			return;
 		}
+
+		res.end('http://0x10co.de/' + program.id);
 	});
 });
 
 app.get('/', function(req, res) {
-	getRecent(function(err, recent) {
-		res.render('edit', {current: '', recent: recent});
-	});
+	renderWithRecent('edit', {current: ''});
 });
 
 app.listen(8000);
