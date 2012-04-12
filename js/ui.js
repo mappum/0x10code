@@ -44,23 +44,77 @@ $(function() {
     var instructionMap = [], addressMap = [];
     var pcLine = 0, errorLine = 0;
     
-    function getColor(nibble) {
-    	return 'rgba(' + (((nibble>>2)&1)*255)
-    		+ ',' + (((nibble>>1)&1)*255)
-    		+ ',' + ((nibble&1)*255)
-    		+ ',' + '1'//((nibble>>3)&1)
-    		+ ')';
-    };
-    
     function clearScreen() {
-    	ctx.clearRect(0, 0, 500, 500);
+    	ctx.fillStyle = getColor(0);
+        ctx.fillRect(0, 0, 500, 500);
     };
     
-    var canvas = document.getElementById('canvas');  
+    function getColor(val) {
+    	var value = 0xaa,
+    		greenValue = 0xaa,
+    		h = (val >> 3),
+    		r = ((val >> 2) & 1),
+    		g = ((val >> 1) & 1),
+    		b = ((val >> 0) & 1);
+    		
+    		console.log(r, g, b);
+        if(h) {
+          	value = 0xff;
+          	greenValue = 0xff;
+        }
+        if(!h && r && g) {
+        	greenValue = 0xff;
+        }
+        return 'rgb(' +
+            + (r * value) + ','
+            + (g * greenValue) + ','
+            + (b * value)
+            + ')';
+    };
+    
+    var font = [];
+    var charWidth = 4, charHeight = 8;
+    var charScale = 3;
+    (function() {
+	    var fontCanvas = document.getElementById('fontCanvas'); 
+	    var fontCtx = fontCanvas.getContext('2d');
+	    var fontImage = new Image();
+	    fontImage.onload = function() {
+	    	fontCtx.drawImage(fontImage, 0, 0);
+	    	
+	    	for(var i = 0; i < charWidth; i++) {
+	    		for(var j = 0; j < 32; j++) {
+	    			var fontData = fontCtx.getImageData(j * charWidth, i * charHeight, charWidth, charHeight),
+	    				charId = (i * 32) + j;
+	    				
+	    			for(var k = 0; k < charWidth; k++) {
+	    				var col = 0;
+	    				for(var l = 0; l < charHeight; l++) {
+	    					var pixelId = l * charWidth + k;
+	    					col |= ((fontData.data[pixelId * charWidth + 1] > 128) * 1) << (charHeight - l - 1);
+	    				}
+	    				font[(charId * 2) + Math.floor(k/2)] |= (col << (((k+1)%2) * charHeight));
+	    			}
+	    		}
+	    	}
+	    	copyFont();
+	    };
+	    fontImage.src = '/img/font.png';
+    })();
+    
+    function copyFont() {
+    	for(var i = 0; i < font.length; i++) {
+    		cpu.mem[0x8180 + i] = font[i];
+    	}
+    };
+    
+    var canvas = document.getElementById('canvas');     
+    var blinkCells = [], cellQueue = [];
+    var blinkInterval = 700;
  	var ctx = canvas.getContext('2d');
  	var spaceX = 12, spaceY = 17;
- 	var cols = 32, rows = 16;
- 	$('canvas').attr('width', spaceX * cols).attr('height', spaceY * rows);
+ 	var cols = 32, rows = 12;
+ 	$('canvas').attr('width', charWidth * cols * charScale).attr('height', charHeight * rows * charScale);
  	ctx.font = '16px monospace';
  	var cellPadding = 1;
     cpu.mapDevice(0x8000, cols * rows, {
@@ -71,25 +125,94 @@ $(function() {
             	.replace('\n', ' ')
             	.replace('\r', ' ')
             	.replace('\0', ' ');
-            var fg = getColor((val >> 12) ^ 0xf), bg = getColor((val >> 8) & 0xf);
             
-            if((val >> 8) & 0x7) {
-            	ctx.fillStyle = bg;
-            	ctx.fillRect(col * spaceX, row * spaceY, spaceX, spaceY);
-            } else {
-            	ctx.clearRect(col * spaceX, row * spaceY, spaceX, spaceY);
-            }
-
-			ctx.fillStyle = fg;
-	 		ctx.fillText(character, col * spaceX + cellPadding, (row+1) * spaceY - 4);
- 			 
             cpu.mem[key+0x8000] = val;
+            queueChar(col, row);
+            
+            if(((val >> 7) & 1) === 1) blinkCells[row][col] = true;
+            else blinkCells[row][col] = false;
+ 			 
+            
         },
         get: function(key) {
         	return cpu.mem[key+0x8000];
         }
     });
     
+    for(var i = 0; i < rows; i++) {
+    	cellQueue.push([]);
+    	blinkCells.push([]);
+    }
+    
+    function queueChar(x, y) {
+    	cellQueue[y][x] = true;
+    };
+    
+    var blinkVisible = false;
+    function drawChar(value, x, y) {
+    	var charValue = value & 0x7f,
+    		fg = getColor((value >> 12) & 0xf),
+            bg = getColor((value >> 8) & 0xf),
+            blink = ((value >> 7) & 1) === 1;
+    	var fontChar = [cpu.mem[0x8180+charValue * 2], cpu.mem[0x8180+charValue * 2 + 1]];
+		
+		ctx.fillStyle = bg;
+		ctx.fillRect(x * charWidth * charScale,
+			y * charHeight * charScale,
+			charWidth * charScale, charHeight * charScale);
+		
+		if(!(blink && !blinkVisible)) {
+			for(var i = 0; i < charWidth; i++) {
+				var word = fontChar[(i >= 2) * 1];
+				var hword = (word >> (!(i%2) * 8)) & 0xff;
+	
+				for(var j = 0; j < charHeight; j++) {				
+					var pixel = (hword >> (charHeight - j - 1)) & 1;
+					
+					if(pixel){
+						ctx.fillStyle = fg;
+						ctx.fillRect((x * charWidth + i) * charScale,
+							(y * charHeight + j) * charScale,
+							charScale, charScale);
+					}
+				}
+			}
+		}
+    };
+    
+    function drawLoop() {
+    	if(cpu.running) {
+    		for(var i = 0; i < rows; i++) {
+    			for(var j = 0; j < cols; j++) {
+    				var cell = cellQueue[i][j];
+    				if(cell) {
+    					drawChar(cpu.mem[0x8000 + (i * cols) + j], j, i);
+    					cellQueue[i][j] = false;
+    				}
+    			}
+    		}
+    	}
+    	if(window.requestAnimationFrame) window.requestAnimationFrame(drawLoop);
+    	else setTimeout(drawLoop, 17);
+    };
+    drawLoop();
+    
+    function blinkLoop() {
+    	if(cpu.running) {
+    		blinkVisible = !blinkVisible;
+    		for(var i = 0; i < rows; i++) {
+    			for(var j = 0; j < cols; j++) {
+    				if(blinkCells[i][j]) {
+    					queueChar(j, i);
+    				}
+    			}
+    		}
+    	} else {
+    		blinkVisible = false;
+    	}
+    	setTimeout(blinkLoop, blinkInterval);
+    };
+    blinkLoop();
  
     var keyPointer = 0, inputBufferSize = 0xf, inputAddress = 0x9000;
     cpu.mapDevice(inputAddress, inputBufferSize + 1, {
@@ -168,6 +291,7 @@ $(function() {
         $('#run').removeClass('disabled');
         $('#reset').removeClass('disabled');
         cpu.clear();
+        copyFont();
         clearScreen();
         keyPointer = 0;
         

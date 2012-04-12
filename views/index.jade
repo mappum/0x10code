@@ -17,7 +17,7 @@ html(lang='en')
             img(src="/img/logo.png")
           div.nav-collapse.collapse
             ul.nav
-              pages = {'new':'New Program', 'top':'Top Programs', 'random':'Random'}
+              pages = {'new':'New Program', 'top':'Top Programs', 'random':'Random', 'io':'I/O Spec'}
               each v, k in pages
                 - if(current == k)
                   li.active: a(href="#{k}") #{v}
@@ -26,13 +26,16 @@ html(lang='en')
     div.container-fluid
       div.row-fluid
         div.span9
-          div.alert.alert-warning
-            strong Hey! 
-            span If input does not work in a program, that means the program was not written to work with Notch's input system, described 
-              a(href="http://www.reddit.com/r/dcpu16/comments/s3086/correct_way_of_accessing_keyboard/c4aomtn") here.
+          div.alert.alert-error
+            strong Oh no! 
+            span The spec for the display system just changed big-time, so old code won't work now. 
+              a(href="http://0x10co.de/io") Check it out.
           block content
         div.span3
           block sidebar
+            ul
+              li: a(href="http://www.0x10cforum.com/") 0x10c Forum
+              li: a(href="http://0x10cwiki.com") 0x10c Wiki
             - if(typeof recent !== 'undefined')
                 div.accordion-group
                   div.accordion-heading
@@ -145,6 +148,8 @@ html(lang='en')
           a(href="http://github.com/mappum/DCPU-16") DCPU16 code
           span &nbsp;-&nbsp;
           a(href="https://github.com/mappum/0x10code") Site code
+          span &nbsp-&nbsp;
+          a(href="https://github.com/mappum/0x10code/issues") Report bugs
     block scripts
       script(src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js")
       script(src="/bootstrap/js/bootstrap-transition.js")

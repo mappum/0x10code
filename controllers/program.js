@@ -24,5 +24,5 @@ exports.set = function(data, callback) {
 exports.sort = function(field, callback, params, fields, limit) {
 	Program
 		.find(params || {}, fields || ['title', 'author', 'description', 'views', 'id', 'date'],
-		{sort:[[field, 'descending']], limit: limit || 10}, callback);
+		{sort:[[field, 'descending']], limit: limit || 25}, callback);
 };

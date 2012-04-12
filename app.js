@@ -13,6 +13,9 @@ app.set('views', './views');
 app.set('view engine', 'jade');
 app.set('view options', {layout: false});
 app.use(express.bodyParser());
+var oneYear = 31557600000;
+app.use(express.static('/', { maxAge: oneYear }));
+app.use(express.errorHandler());
 
 var resources = [
 	'/bootstrap/css',
@@ -58,6 +61,12 @@ app.get('/random', function(req, res) {
 
 app.get('/about', function(req, res) {
 	res.end('');
+});
+
+app.get('/io', function(req, res) {
+	getRecent(function(err, recent) {
+		res.render('io', {recent: recent, current: 'io'});
+	});
 });
 
 app.get('/new', function(req, res) {
@@ -154,14 +163,19 @@ app.get('/forks/:id', function(req, res) {
 });
 
 app.post('/', function(req, res) {
-	programDb.set(req.body, function(err, program) {
-		if(!err) {
-			res.end('http://0x10co.de/' + program.id);
-		} else {
-			console.log(err);
-			res.end('', 404);
-		}
-	});
+	if(req.body.code.length > 2) {
+		programDb.set(req.body, function(err, program) {
+			if(!err) {
+				res.end('http://0x10co.de/' + program.id);
+			} else {
+				console.log(err);
+				res.end('', 404);
+			}
+		});
+	} else {
+		console.log(err);
+		res.end('', 404);
+	}
 });
 
 app.get('/', function(req, res) {
@@ -170,5 +184,5 @@ app.get('/', function(req, res) {
 	});
 });
 
-app.listen(8000);
+app.listen(80);
 

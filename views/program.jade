@@ -7,91 +7,93 @@ append left
       #{code}
   
 append right
-  div#consoleContainer
-    h2 Console
-    pre#console.console
-      canvas#canvas(width="400", height="320")
-  div#error.alert.alert-error(style="display:none")
-    strong ERROR: 
-    span
-  div.btn-toolbar
-    div.btn-group
-      button#run.btn.btn-action
-        i.icon-play
-        span Run
-      button#stop.btn.btn-action
-        i.icon-stop
-        span Stop
-    div.btn-group
-      button#debug.btn.btn-danger(data-toggle="button")
-        i#debugIcon.icon-chevron-down.icon-white
-        span Debug
-  div#debugger.collapse.accordion-group.inset
-    div.margined
-      div.btn-group
-        button#step.btn.btn-action
-          i.icon-step-forward
-          span Step
-        button#reset.btn.btn-action
-          i.icon-repeat
-          span Reset
+  div#rightFix
+    div#consoleContainer
+      h2 Console
+      pre#console.console
+        canvas#canvas(width="384", height="384")
+        canvas#fontCanvas(width="128", height="32", style="display:none")
+    div#error.alert.alert-error(style="display:none")
+      strong ERROR: 
       span
-        strong Cycle: 
-        span#cycle
-      table#debugRegisters.table-bordered.table-striped
-        tablehead
-          tr.header
-            th Key
-            th Value
-            th [Value]
-        tablebody
-          tr#a
-            td A
-            td.val 0000
-            td.point 0000
-          tr#b
-            td B
-            td.val 0000
-            td.point 0000
-          tr#c
-            td C
-            td.val 0000
-            td.point 0000
-          tr#x
-            td X
-            td.val 0000
-            td.point 0000
-          tr#y
-            td Y
-            td.val 0000
-            td.point 0000
-          tr#z
-            td Z
-            td.val 0000
-            td.point 0000
-          tr#i
-            td I
-            td.val 0000
-            td.point 0000
-          tr#j
-            td J
-            td.val 0000
-            td.point 0000
-          tr#pc
-            td PC
-            td.val 0000
-            td.point 0000
-          tr#sp
-            td SP
-            td.val 0000
-            td.point 0000
-          tr#o
-            td O
-            td.val 0000
-      table#memoryInfo
+    div.btn-toolbar
+      div.btn-group
+        button#run.btn.btn-action
+          i.icon-play
+          span Run
+        button#stop.btn.btn-action
+          i.icon-stop
+          span Stop
+      div.btn-group
+        button#debug.btn.btn-danger(data-toggle="button")
+          i#debugIcon.icon-chevron-down.icon-white
+          span Debug
+    div#debugger.collapse.accordion-group.inset
+      div.margined
+        div.btn-group
+          button#step.btn.btn-action
+            i.icon-step-forward
+            span Step
+          button#reset.btn.btn-action
+            i.icon-repeat
+            span Reset
+        span
+          strong Cycle: 
+          span#cycle
+        table#debugRegisters.table-bordered.table-striped
+          tablehead
+            tr.header
+              th Key
+              th Value
+              th [Value]
+          tablebody
+            tr#a
+              td A
+              td.val 0000
+              td.point 0000
+            tr#b
+              td B
+              td.val 0000
+              td.point 0000
+            tr#c
+              td C
+              td.val 0000
+              td.point 0000
+            tr#x
+              td X
+              td.val 0000
+              td.point 0000
+            tr#y
+              td Y
+              td.val 0000
+              td.point 0000
+            tr#z
+              td Z
+              td.val 0000
+              td.point 0000
+            tr#i
+              td I
+              td.val 0000
+              td.point 0000
+            tr#j
+              td J
+              td.val 0000
+              td.point 0000
+            tr#pc
+              td PC
+              td.val 0000
+              td.point 0000
+            tr#sp
+              td SP
+              td.val 0000
+              td.point 0000
+            tr#o
+              td O
+              td.val 0000
+        table#memoryInfo
         
 append scripts
-  script(src="https://raw.github.com/mappum/DCPU-16/master/dcpu16.js")
+  script(src="/js/dcpu16.js")
   script(src="/js/codemirror.js")
-  script(src="/js/javascript.js")
+  script(src="/js/mode.js")
   script(src="/js/ui.js")
