@@ -35,7 +35,7 @@ for(var i = 0; i < resources.length; i++) {
 	});
 }
 
-function renderWithRecent(type, o, callback) {
+function renderWithRecent(type, res, o, callback) {
 	programDb.sort('date', function(err, recent) {
 		recent.moment = moment;
 
@@ -53,7 +53,7 @@ function incrementViews(program) {
 
 app.get('/top', function(req, res) {
 	programDb.sort('views', function(err, posts) {
-		renderWithRecent('list', {
+		renderWithRecent('list', res, {
 			current: 'top',
 			posts: posts,
 			moment: moment,
@@ -93,7 +93,7 @@ app.get('/:id', function(req, res) {
 		program.current = 'program';
 
 		if(program.password.length > 0) {
-			renderWithRecent('password', program);
+			renderWithRecent('password', res, program);
 			return;
 		}
 
@@ -103,7 +103,7 @@ app.get('/:id', function(req, res) {
 			program.md = md;
 			program.moment = moment;
 
-			renderWithRecent('noedit', program, incrementViews);
+			renderWithRecent('noedit', res, program, incrementViews);
 		});
 	});
 });
@@ -113,7 +113,7 @@ app.post('/:id', function(req, res) {
 		program.current = 'program';
 
 		if(req.body.password !== program.password) {
-			renderWithRecent('password', program);
+			renderWithRecent('password', res, program);
 			return;
 		}
 
@@ -123,7 +123,7 @@ app.post('/:id', function(req, res) {
 			program.md = md;
 			program.moment = moment;
 
-			renderWithRecent('noedit', program, incrementViews);
+			renderWithRecent('noedit', res, program, incrementViews);
 		});
 	});
 });
@@ -148,13 +148,13 @@ app.get('/download/:id', function(req, res) {
 app.get('/fork/:id', function(req, res) {
 	programDb.get(req.params.id, function(err, program) {
 		if (program) {
-			renderWithRecent('edit', {
+			renderWithRecent('edit', res, {
 				current: 'fork',
 				code: program.code,
 				fork: req.params.id
 			});
 		} else {
-			renderWithRecent('edit', {
+			renderWithRecent('edit', res, {
 				current: ''
 			});
 		}
@@ -163,7 +163,7 @@ app.get('/fork/:id', function(req, res) {
 
 app.get('/forks/:id', function(req, res) {
 	programDb.get({fork: req.params.id, password: ''}, function(err, programs) {
-		renderWithRecent('list', {
+		renderWithRecent('list', res, {
 			posts: programs,
 			current: 'forks',
 			moment: moment,
@@ -189,7 +189,7 @@ app.post('/', function(req, res) {
 });
 
 app.get('/', function(req, res) {
-	renderWithRecent('edit', {current: ''});
+	renderWithRecent('edit', res, {current: ''});
 });
 
 app.listen(80);
