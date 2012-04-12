@@ -74,9 +74,7 @@ app.get('/about', function(req, res) {
 });
 
 app.get('/io', function(req, res) {
-	getRecent(function(err, recent) {
-		res.render('io', {recent: recent, current: 'io'});
-	});
+	renderWithRecent('io', res, {current: 'io'});
 });
 
 app.get('/new', function(req, res) {
