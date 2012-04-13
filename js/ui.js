@@ -138,12 +138,13 @@ $(function() {
     	set: function(key, val) {
     		cpu.mem[0x8180 + key] = val;
     		
-    		for(var i = 0; i < rows; i++) {
-    			for(var j = 0; j < cols; j++) {
-    				if(cpu.mem[(i * cols + j)] & 0x7f === Math.floor(key / 2)) {
-    					queueChar(j, i);
-    				}
-    			}
+    		var displayRam = cpu.mem.slice(0x8000, 0x8180);
+    		var value = Math.floor(key / 2);
+    		
+    		for(var i = 0; i < displayRam.length; i++) {
+	    		if((displayRam[i] & 0x7f) === value) {
+	    			queueChar(i % cols, Math.floor(i / cols));
+	    		}
     		}
     	},
     	get: function(key) {
