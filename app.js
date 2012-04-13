@@ -100,7 +100,7 @@ app.get('/new', function(req, res) {
 app.get('/:id', function(req, res) {
 	programDb.get(req.params.id, function(err, program) {
 		if(!program) {
-			res.render('edit', res, {current: '', id: req.params.id});
+			render('edit', res, {current: '', id: req.params.id});
 			return;
 		}
 
