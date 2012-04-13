@@ -6,6 +6,7 @@ Make sure you have nodejs, mongodb and npm installed on your machine.
 
 To install node.js libraries, simply run "npm install" in the root of the git repo.
 
-To run server, simply run "node app.js".
+Copy the config_example.js file to config.js and edit the values to match your environment.
 
-Note, you will probably have to change app.js near the bottom to bind to a different port.
+Finally, to run the server, simply run "node app.js".
+
