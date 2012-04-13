@@ -1,9 +1,9 @@
 doctype 5
 html(lang='en')
   head
-    title 0x10co.de - 
+    title= sitename 
       block title
-      | The easy DCPU-16 sharer
+      | - The easy DCPU-16 sharer
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
     link(href="/bootstrap/css/bootstrap.css", rel="stylesheet")
     link(href="/bootstrap/css/bootstrap-responsive.css", rel="stylesheet")
@@ -13,8 +13,8 @@ html(lang='en')
     div.navbar
       div.navbar-inner
         div.container-fluid
-          a.brand(href="http://0x10co.de")
-            img(src="/img/logo.png")
+          a.brand(href="/")
+            img(src=logo)
           div.nav-collapse.collapse
             ul.nav
               pages = {'new':'New Program', 'top':'Top Programs', 'random':'Random', 'io':'I/O Spec'}
@@ -30,8 +30,8 @@ html(lang='en')
         div.span3
           block sidebar
             ul
-              li: a(href="http://www.0x10cforum.com/") 0x10c Forum
-              li: a(href="http://0x10cwiki.com") 0x10c Wiki
+              each link in links
+                li: a(href=link.url)= link.title
             div.accordion-group
               div.accordion-heading
                 a.accordion-toggle(data-toggle="collapse", data-target="#reference") DCPU16 Quick Reference
