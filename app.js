@@ -64,8 +64,13 @@ app.get('/top', function(req, res) {
 
 app.get('/random', function(req, res) {
 	programDb.get({password:''}, function(err, posts) {
-		var program = posts[Math.floor(posts.length * Math.random())];
-		res.redirect('/' + program.id);
+		if (posts.length > 0){
+			var program = posts[Math.floor(posts.length * Math.random())];
+			res.redirect('/' + program.id);
+		}else{
+			// no posts are saved yet, so redirect to root
+			res.redirect('/');
+		}
 	});
 });
 
