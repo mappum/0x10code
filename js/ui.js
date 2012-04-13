@@ -50,25 +50,18 @@ $(function() {
     };
     
     function getColor(val) {
-    	var value = 0xaa,
-    		greenValue = 0xaa,
+    	var add = 0,
     		h = (val >> 3),
-    		r = ((val >> 2) & 1),
-    		g = ((val >> 1) & 1),
-    		b = ((val >> 0) & 1);
-    		
-    		console.log(r, g, b);
+    		r = ((val >> 2) & 1) * 0xaa,
+    		g = ((val >> 1) & 1) * 0xaa,
+    		b = ((val >> 0) & 1) * 0xaa;
         if(h) {
-          	value = 0xff;
-          	greenValue = 0xff;
-        }
-        if(!h && r && g) {
-        	greenValue = 0xff;
+          	add = 0x55;
         }
         return 'rgb(' +
-            + (r * value) + ','
-            + (g * greenValue) + ','
-            + (b * value)
+            + (r + add) + ','
+            + (g + add) + ','
+            + (b + add)
             + ')';
     };
     
@@ -91,7 +84,7 @@ $(function() {
 	    				var col = 0;
 	    				for(var l = 0; l < charHeight; l++) {
 	    					var pixelId = l * charWidth + k;
-	    					col |= ((fontData.data[pixelId * charWidth + 1] > 128) * 1) << (charHeight - l - 1);
+	    					col |= (((fontData.data[pixelId * charWidth + 1] > 128) * 1) << l);
 	    				}
 	    				font[(charId * 2) + Math.floor(k/2)] |= (col << (((k+1)%2) * charHeight));
 	    			}
@@ -112,9 +105,13 @@ $(function() {
     var blinkCells = [], cellQueue = [];
     var blinkInterval = 700;
  	var ctx = canvas.getContext('2d');
- 	var spaceX = 12, spaceY = 17;
+ 	
  	var cols = 32, rows = 12;
- 	$('canvas').attr('width', charWidth * cols * charScale).attr('height', charHeight * rows * charScale);
+ 	var borderSize = 6;
+ 	
+ 	$('canvas')
+ 		.attr('width', (charWidth * cols + borderSize * 2) * charScale)
+ 		.attr('height', (charHeight * rows + borderSize * 2) * charScale);
  	ctx.font = '16px monospace';
  	var cellPadding = 1;
     cpu.mapDevice(0x8000, cols * rows, {
@@ -131,12 +128,27 @@ $(function() {
             
             if(((val >> 7) & 1) === 1) blinkCells[row][col] = true;
             else blinkCells[row][col] = false;
- 			 
-            
         },
         get: function(key) {
         	return cpu.mem[key+0x8000];
         }
+    });
+    
+    cpu.mapDevice(0x8180, 256, {
+    	set: function(key, val) {
+    		cpu.mem[0x8180 + key] = val;
+    		
+    		for(var i = 0; i < rows; i++) {
+    			for(var j = 0; j < cols; j++) {
+    				if(cpu.mem[(i * cols + j)] & 0x7f === Math.floor(key / 2)) {
+    					queueChar(j, i);
+    				}
+    			}
+    		}
+    	},
+    	get: function(key) {
+    		return cpu.mem[key+0x8180];
+    	}
     });
     
     for(var i = 0; i < rows; i++) {
@@ -157,8 +169,8 @@ $(function() {
     	var fontChar = [cpu.mem[0x8180+charValue * 2], cpu.mem[0x8180+charValue * 2 + 1]];
 		
 		ctx.fillStyle = bg;
-		ctx.fillRect(x * charWidth * charScale,
-			y * charHeight * charScale,
+		ctx.fillRect((x * charWidth + borderSize) * charScale,
+			(y * charHeight + borderSize) * charScale,
 			charWidth * charScale, charHeight * charScale);
 		
 		if(!(blink && !blinkVisible)) {
@@ -167,12 +179,12 @@ $(function() {
 				var hword = (word >> (!(i%2) * 8)) & 0xff;
 	
 				for(var j = 0; j < charHeight; j++) {				
-					var pixel = (hword >> (charHeight - j - 1)) & 1;
+					var pixel = (hword >> j) & 1;
 					
 					if(pixel){
 						ctx.fillStyle = fg;
-						ctx.fillRect((x * charWidth + i) * charScale,
-							(y * charHeight + j) * charScale,
+						ctx.fillRect((x * charWidth + i + borderSize) * charScale,
+							(y * charHeight + j + borderSize) * charScale,
 							charScale, charScale);
 					}
 				}
@@ -193,7 +205,7 @@ $(function() {
     		}
     	}
     	if(window.requestAnimationFrame) window.requestAnimationFrame(drawLoop);
-    	else setTimeout(drawLoop, 17);
+    	else setTimeout(drawLoop, 16);
     };
     drawLoop();
     
@@ -213,6 +225,23 @@ $(function() {
     	setTimeout(blinkLoop, blinkInterval);
     };
     blinkLoop();
+    
+    cpu.mapDevice(0x8280, 1, {
+    	set: function(key, val) {
+    		cpu.mem[0x8280 + key] = val;
+    		
+    		var width = (charWidth * cols + borderSize * 2) * charScale,
+    			height = (charHeight * rows + borderSize * 2) * charScale;
+    		ctx.fillStyle = getColor(val & 0xf);
+    		ctx.fillRect(0, 0, width, borderSize * charScale);
+    		ctx.fillRect(0, height - borderSize * charScale, width, borderSize * charScale);
+    		ctx.fillRect(0, 0, borderSize * charScale, height);
+    		ctx.fillRect(width - borderSize * charScale, 0, borderSize * charScale, height);
+    	},
+    	get: function(key) {
+    		return cpu.mem[0x8280 + key];
+    	}
+    });
  
     var keyPointer = 0, inputBufferSize = 0xf, inputAddress = 0x9000;
     cpu.mapDevice(inputAddress, inputBufferSize + 1, {

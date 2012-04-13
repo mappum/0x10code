@@ -8,8 +8,11 @@ block content
     p The display is that weird little grey box you see the the right of your code. How do you write stuff to it?
     p
       :markdown
-        It is **32 columns** by **12 rows**, and the memory is mapped from address **0x8000** to **0x817f**. 0x8000 is the top left cell, 0x8001 is the next one over, and 0x8020 is first cell of the second row.
+        It is **32 columns** by **12 rows**, and the memory is mapped from address `0x8000` to `0x817f`. 0x8000 is the top left cell, 0x8001 is the next one over, and 0x8020 is first cell of the second row.
         When you write to one of these cells, you do it in the following bit format: `HRGB HRGB B CCCCCCC` where the first set of HRGB is the color of the text, the next `HRGB` is the color of the background (with `H` being 'highlight', making the colors brighter), `B` is whether or not to blink the cell, and `C` is the ASCII character value.
+    p
+      :markdown
+        You may also set the color of the screen border by writing to `0x8240` in the same `HRGB` color format as cells. 
     h2 Fonts
     p You can even set the font used when writing to the display. THis could come in handy for making game sprites, tiles, interfaces, etc.
     p

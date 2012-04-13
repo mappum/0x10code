@@ -26,31 +26,12 @@ html(lang='en')
     div.container-fluid
       div.row-fluid
         div.span9
-          div.alert.alert-error
-            strong Oh no! 
-            span The spec for the display system just changed big-time, so old code won't work now. 
-              a(href="http://0x10co.de/io") Check it out.
           block content
         div.span3
           block sidebar
             ul
               li: a(href="http://www.0x10cforum.com/") 0x10c Forum
               li: a(href="http://0x10cwiki.com") 0x10c Wiki
-            - if(typeof recent !== 'undefined')
-                div.accordion-group
-                  div.accordion-heading
-                    a.accordion-toggle(data-toggle="collapse", data-target="#recent") Recent Programs
-                    div#recent.collapse.in.accordion-body.inset
-                      div.accordion-inner
-                        ul.reference
-                        - for(var i = 0; i < recent.length; i++)
-                          li
-                            a(href="/#{recent[i].id}")
-                              div
-                                strong #{recent[i].title} 
-                                small #{recent[i].author}
-                                br
-                                i= recent.moment(recent[i].date).fromNow()
             div.accordion-group
               div.accordion-heading
                 a.accordion-toggle(data-toggle="collapse", data-target="#reference") DCPU16 Quick Reference
@@ -140,6 +121,21 @@ html(lang='en')
                         code PC
                         span , 
                         code O
+            - if(typeof recent !== 'undefined')
+                div.accordion-group
+                  div.accordion-heading
+                    a.accordion-toggle(data-toggle="collapse", data-target="#recent") Recent Programs
+                    div#recent.collapse.in.accordion-body.inset
+                      div.accordion-inner
+                        ul.reference
+                        - for(var i = 0; i < recent.length; i++)
+                          li
+                            a(href="/#{recent[i].id}")
+                              div
+                                strong #{recent[i].title} 
+                                small #{recent[i].author}
+                                br
+                                i= recent.moment(recent[i].date).fromNow()
                       
     hr
     div.container-fluid
