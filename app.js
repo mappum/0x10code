@@ -78,7 +78,7 @@ app.get('/io', function(req, res) {
 });
 
 app.get('/new', function(req, res) {
-	res.redirect('http://0x10co.de');
+	res.redirect('/');
 });
 
 app.get('/:id', function(req, res) {
@@ -174,7 +174,7 @@ app.post('/', function(req, res) {
 	if(req.body.code.length > 2) {
 		programDb.set(req.body, function(err, program) {
 			if(!err) {
-				res.end('http://0x10co.de/' + program.id);
+				res.end('/' + program.id);
 			} else {
 				console.log(err);
 				res.end('', 404);
