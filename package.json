@@ -1,0 +1,11 @@
+{
+	"name": "0x10code",
+	"version": "0.0.1",
+	"dependencies": {
+		"express": "*",
+		"mongoose": "*",
+		"node-markdown": "*",
+		"moment": "*"
+	}
+}
+
