@@ -48,6 +48,9 @@ function renderWithRecent(type, res, o, callback) {
 		recent.moment = moment;
 
 		o.recent = recent;
+		o.sitename = config.sitename;
+		o.links = config.links;
+		o.logo = config.logo;
 		res.render(type, o);
 
 		if (callback) callback(o);
