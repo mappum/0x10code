@@ -6,7 +6,8 @@
 		"mongoose": "*",
 		"node-markdown": "*",
 		"moment": "*",
-		"jade": "*"
+		"jade": "*",
+		"markdown": "*"
 	}
 }
 
