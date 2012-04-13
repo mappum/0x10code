@@ -1,0 +1,7 @@
+0x10code server written in Node.JS.
+
+Uses MongoDB and Express.
+
+Make sure you have nodejs, mongodb and npm installed on your machine.
+
+To install node.js libraries, simply run "npm install" in the root of the git repo.
