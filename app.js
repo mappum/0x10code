@@ -1,10 +1,18 @@
+// check if the config is there
+if (!require('path').existsSync('./config.js')){
+	console.log("First create config.js! Copy config_example.js as a template!");
+	process.exit(1);
+}
+
+// load dependancies
 var express = require('express'),
 	fs = require('fs'),
 	url = require('url'),
 	mongoose = require('mongoose'),
 	md = require('node-markdown').Markdown,
 	moment = require('moment'),
-	programDb = require('./controllers/program.js');
+	programDb = require('./controllers/program.js'),
+	config = require('./config.js');
 
 mongoose.connect('mongodb://localhost/0x10code');
 
@@ -195,5 +203,5 @@ app.get('/', function(req, res) {
 	renderWithRecent('edit', res, {current: ''});
 });
 
-app.listen(80);
+app.listen(config.port);
 
