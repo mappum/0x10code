@@ -1,10 +1,18 @@
+// check if the config is there
+if (!require('path').existsSync('./config.js')){
+	console.log("First create config.js! Copy config_example.js as a template!");
+	process.exit(1);
+}
+
+// load dependancies
 var express = require('express'),
 	fs = require('fs'),
 	url = require('url'),
 	mongoose = require('mongoose'),
 	md = require('node-markdown').Markdown,
 	moment = require('moment'),
-	programDb = require('./controllers/program.js');
+	programDb = require('./controllers/program.js'),
+	config = require('./config.js');
 
 mongoose.connect('mongodb://localhost/0x10code');
 
@@ -40,6 +48,9 @@ function renderWithRecent(type, res, o, callback) {
 		recent.moment = moment;
 
 		o.recent = recent;
+		o.sitename = config.sitename;
+		o.links = config.links;
+		o.logo = config.logo;
 		res.render(type, o);
 
 		if (callback) callback(o);
@@ -64,8 +75,13 @@ app.get('/top', function(req, res) {
 
 app.get('/random', function(req, res) {
 	programDb.get({password:''}, function(err, posts) {
-		var program = posts[Math.floor(posts.length * Math.random())];
-		res.redirect('/' + program.id);
+		if (posts.length > 0){
+			var program = posts[Math.floor(posts.length * Math.random())];
+			res.redirect('/' + program.id);
+		}else{
+			// no posts are saved yet, so redirect to root
+			res.redirect('/');
+		}
 	});
 });
 
@@ -78,7 +94,7 @@ app.get('/io', function(req, res) {
 });
 
 app.get('/new', function(req, res) {
-	res.redirect('http://0x10co.de');
+	res.redirect('/');
 });
 
 app.get('/:id', function(req, res) {
@@ -174,7 +190,7 @@ app.post('/', function(req, res) {
 	if(req.body.code.length > 2) {
 		programDb.set(req.body, function(err, program) {
 			if(!err) {
-				res.end('http://0x10co.de/' + program.id);
+				res.end('/' + program.id);
 			} else {
 				console.log(err);
 				res.end('', 404);
@@ -190,5 +206,5 @@ app.get('/', function(req, res) {
 	renderWithRecent('edit', res, {current: ''});
 });
 
-app.listen(80);
+app.listen(config.port);
 
