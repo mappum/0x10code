@@ -194,14 +194,12 @@ $(function() {
     };
     
     function drawLoop() {
-    	if(cpu.running) {
-    		for(var i = 0; i < rows; i++) {
-    			for(var j = 0; j < cols; j++) {
-    				var cell = cellQueue[i][j];
-    				if(cell) {
-    					drawChar(cpu.mem[0x8000 + (i * cols) + j], j, i);
-    					cellQueue[i][j] = false;
-    				}
+    	for(var i = 0; i < rows; i++) {
+    		for(var j = 0; j < cols; j++) {
+    			var cell = cellQueue[i][j];
+    			if(cell) {
+    				drawChar(cpu.mem[0x8000 + (i * cols) + j], j, i);
+    				cellQueue[i][j] = false;
     			}
     		}
     	}
@@ -211,17 +209,13 @@ $(function() {
     drawLoop();
     
     function blinkLoop() {
-    	if(cpu.running) {
-    		blinkVisible = !blinkVisible;
-    		for(var i = 0; i < rows; i++) {
-    			for(var j = 0; j < cols; j++) {
-    				if(blinkCells[i][j]) {
-    					queueChar(j, i);
-    				}
+    	blinkVisible = !blinkVisible;
+    	for(var i = 0; i < rows; i++) {
+    		for(var j = 0; j < cols; j++) {
+    			if(blinkCells[i][j]) {
+    				queueChar(j, i);
     			}
     		}
-    	} else {
-    		blinkVisible = false;
     	}
     	setTimeout(blinkLoop, blinkInterval);
     };
@@ -329,71 +323,82 @@ $(function() {
         editor.setLineClass(errorLine, null, null);
     }
     
-    var debugMs = 16, lastDebug = 0;
+    var lastRam; 
     function debugLoop() {
-	    editor.setLineClass(pcLine, null, null);
-	    pcLine = editor.setLineClass(assembler.instructionMap[assembler.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
-	    
-	    $('#memoryInfo').empty();
-	    
-	    function updateRegister(name) {
-	    	$('#' + name + ' .val').text(DCPU16.formatWord(cpu.mem[name]));
-	    	$('#' + name + ' .point').text(DCPU16.formatWord(cpu.mem[cpu.mem[name]]));
-	    }
-	    
-	    for(var i = 0; i < DCPU16.registerNames.length; i++) {
-	    	updateRegister(DCPU16.registerNames[i]);
-	    }
-	    updateRegister('pc');
-	    updateRegister('o');
-	    
-	    $('#sp .val').text(DCPU16.formatWord(cpu.mem.stack));
-	    $('#sp .point').text(DCPU16.formatWord(cpu.mem[cpu.mem.stack]));
-	    
-	    $('div.tooltip').remove();
-	    
-	    for(var i = 0; i < cpu.ramSize; i += 8) {
-            populated = false;
-            for( j = 0; j < 8; j++) {
-                if(cpu.mem[i + j] || cpu.mem.pc === i + j || cpu.mem.stack === i + j) {
-                    populated = true;
-                    break;
-                }
-            }
-
-            if(populated) {
-                var row = $('<tr></tr>');
-                
-				row.append('<td><strong>' + DCPU16.formatWord(i + j) + '</strong></td>');
-                for(var j = 0; j < 8; j++) {
-                	var cell = $('<td> ' + DCPU16.formatWord(cpu.mem[i + j]) + '</a></td>');
-                	cell.tooltip({
-                		title: editor.getLine(instructionMap[addressMap[j+i]] - 1)
-                	});
-                	row.append(cell);
-                }
-                
-                $('#memoryInfo').append(row);
-            }
-        }
-        
-        $('#cycle').text(cpu.cycle);
+    	if($('#debug').hasClass('active') && cpu.running) {
+		    editor.setLineClass(pcLine, null, null);
+		    pcLine = editor.setLineClass(assembler.instructionMap[assembler.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
+		    
+		    function updateRegister(name) {
+		    	$('#' + name + ' .val').text(DCPU16.formatWord(cpu.mem[name]));
+		    	$('#' + name + ' .point').text(DCPU16.formatWord(cpu.mem[cpu.mem[name]]));
+		    }
+		    
+		    for(var i = 0; i < DCPU16.registerNames.length; i++) {
+		    	updateRegister(DCPU16.registerNames[i]);
+		    }
+		    updateRegister('pc');
+		    updateRegister('o');
+		    
+		    $('#sp .val').text(DCPU16.formatWord(cpu.mem.stack));
+		    $('#sp .point').text(DCPU16.formatWord(cpu.mem[cpu.mem.stack]));
+		    
+		    $('div.tooltip').remove();
+		    
+		    var rowN = 0, table = $('#memoryInfo');
+		    for(var i = 0; i < cpu.ramSize; i += 8) {
+	            var populated = false;
+	            for(var j = 0; j < 8; j++) {
+	            	if(cpu.getDevice(i + j)) {
+	            		break;
+	            	} else if(cpu.mem[i + j] || cpu.mem.pc === i + j || cpu.mem.stack === i + j) {
+	                    populated = true;
+	                    break;
+	                }
+	            }
+	
+	            if(populated) {
+	            	var row = table.find('.row' + rowN);
+	                if(row.length === 0) {
+	                	row = $('<tr class="row' + rowN + '"></tr>');
+	                	table.append(row);
+	                	row.append('<td class="address"></td>');
+	                }
+	                
+	                row.children('.address').text(DCPU16.formatWord(i));
+					
+	                for(var j = 0; j < 8; j++) {
+	                	if(!lastRam || cpu.mem[i + j] !== lastRam[i + j]) {
+		                	var cell = row.children('.cell' + j);
+		                	if(cell.length === 0) {
+		                		cell = $('<td class="cell' + j + '"></td>');
+		                		row.append(cell);
+		                	}
+		                	
+		                	cell.tooltip({
+			                	title: editor.getLine(instructionMap[addressMap[j+i]] - 1)
+			                });
+			                cell.text(DCPU16.formatWord(cpu.mem[i + j]));
+	                	}
+	                }
+	                
+	                
+	                rowN++;
+	            }
+	        }
+	        lastRam = cpu.mem.slice(0);
+	        
+	        $('#cycle').text(cpu.cycle);
+       }
+       setTimeout(debugLoop, 100);
     }
+    debugLoop();
 
     $('#run').click(function() {
         if(!$(this).hasClass('disabled')) {
             if(compile()) {
-            	debugLoop();
             	notRun = false;
-                cpu.run(function() {
-                	if($('#debug').hasClass('active')) {
-	                	var now = new Date().getTime();
-	                	if(now - lastDebug >= debugMs) {
-	                		lastDebug = now;
-	                		debugLoop();
-	                	}
-                	}
-                });
+                cpu.run();
                 $('#step').addClass('disabled');
                 $('#run').addClass('disabled');
                 $('#run span').text('Running...');
@@ -414,12 +419,10 @@ $(function() {
             $('#debugger').collapse('show');
             $('#debugger').css('height', 'auto');
             if(!cpu.running) compile();
-            cpu.loopBatch = 50;
         } else {
             $('#debugIcon').removeClass('icon-chevron-up');
             $('#debugIcon').addClass('icon-chevron-down');
             $('#debugger').collapse('hide');
-            cpu.loopBatch = 1000;
         }
     });
 
@@ -427,14 +430,12 @@ $(function() {
         if(!$(this).hasClass('disabled')) {
             reset();
             compile();
-            debugLoop();
          }
     });
 
     $('#step').click(function() {
         if(!$(this).hasClass('disabled')) {
             cpu.step();
-            debugLoop();
         }
     });
     
