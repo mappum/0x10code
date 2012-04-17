@@ -22,26 +22,9 @@ app.set('view engine', 'jade');
 app.set('view options', {layout: false});
 app.use(express.bodyParser());
 var oneYear = 31557600000;
-app.use(express.static('/', { maxAge: oneYear }));
+app.use(express.static(__dirname + '/', { maxAge: oneYear }));
+app.use(app.router);
 app.use(express.errorHandler());
-
-var resources = [
-	'/bootstrap/css',
-	'/bootstrap/js',
-	'/bootstrap/img',
-	'/css',
-	'/js',
-	'/img'
-];
-for(var i = 0; i < resources.length; i++) {
-	app.get(resources[i] + '/:file', function(req, res) {
-		fs.readFile('.' + req.url,
-		function(err, data) {
-			if(err) res.end('', 404);
-			else res.end(data);
-		});
-	});
-}
 
 function render(type, res, o, callback) {
 	programDb.sort('date', function(err, recent) {
