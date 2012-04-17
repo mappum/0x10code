@@ -11,4 +11,4 @@ exports.links = [
 	}
 ];
 // best to have an image of 38px height
-exports.logo = "img/logo.png";
+exports.logo = "/img/logo.png";
