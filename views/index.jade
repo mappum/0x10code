@@ -15,10 +15,10 @@ html(lang='en')
       div.navbar-inner
         div.container-fluid
           a.brand(href="/")
-            img(src=logo)
+            img(src='/img/logo.png')
           div.nav-collapse.collapse
             ul.nav
-              pages = {'new':'New Program', 'top':'Top Programs', 'random':'Random', 'io':'I/O Spec'}
+              pages = {'/new':'New Program', '/top':'Top Programs', '/random':'Random', '/io':'I/O Spec'}
               each v, k in pages
                 - if(current == k)
                   li.active: a(href="#{k}") #{v}
