@@ -323,9 +323,11 @@ $(function() {
         editor.setLineClass(errorLine, null, null);
     }
     
-    var lastRam; 
+    var lastRam, stepped = false;
     function debugLoop() {
-    	if($('#debug').hasClass('active') && cpu.running) {
+    	if($('#debug').hasClass('active') && cpu.running || stepped) {
+    		stepped = false;
+    		
 		    editor.setLineClass(pcLine, null, null);
 		    pcLine = editor.setLineClass(assembler.instructionMap[assembler.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
 		    
@@ -410,6 +412,7 @@ $(function() {
     $('#stop').click(function() {
         if(!$(this).hasClass('disabled'))
             cpu.stop();
+            stepped = true;
     });
     
     $('#debug').click(function() {
@@ -436,6 +439,8 @@ $(function() {
     $('#step').click(function() {
         if(!$(this).hasClass('disabled')) {
             cpu.step();
+		    editor.setLineClass(pcLine, null, null);
+		    pcLine = editor.setLineClass(assembler.instructionMap[assembler.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
         }
     });
     
