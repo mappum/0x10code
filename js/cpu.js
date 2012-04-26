@@ -272,7 +272,8 @@ CPU.prototype = {
         if(root.OPCODES[insn.opcode] === undefined)
         	throw new Error('Encountered invalid opcode 0x' + insn.opcode.toString(16));
         
-        this.cycle += root.OPCODES[insn.opcode].cost || 0;
+        // One cycle has already been counted while we fetched the opcode, so subtract it here
+        this.cycle += (root.OPCODES[insn.opcode].cost - 1) || 0;
         
         // Read the arguments
         aVal = this.get(insn.a);
