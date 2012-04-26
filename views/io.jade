@@ -2,12 +2,14 @@ extends index
 
 block content
   h1 I/O Specification
-  p The DCPU does not have built-in I/O hardware, but 0x10code provides
-    standard peripherals for interacting with users.
+  p
+    | The DCPU does not have built-in I/O hardware, but 0x10code provides
+    | standard peripherals for interacting with users.
   div
     h2 Display 
-    p The display is that weird little grey box you see to the right of your
-      code. How do you write stuff to it?
+    p
+      | The display is that weird little grey box you see to the right of your
+      | code. How do you write stuff to it?
     p
       :markdown
         In a nutshell, 0x10code implements a standard
@@ -24,41 +26,40 @@ block content
     p
       :markdown
         The color of the border of the display may also be set by calling a
-        hardware interrupt with key `SET_BORDER_COLOR` and the value in the
-        same `HRGB` color format as cells. `SET A,
-        SET_BORDER_COLOR; SET B, <HRGB color>; HWI <address of display>`
+        hardware interrupt. The interrupt key is `SET_BORDER_COLOR`, which is
+        the number 3 on the LEM1802. The interrupt value in the same `HRGB`
+        color format as cells.
+        Example to set the border to red: `SET A, 3; SET B, 1; HWI <address of
+        display>`
     h2 Fonts
-    p You can even set the font used when writing to the display. This could
-      come in handy for making game sprites, tiles, interfaces, etc.
+    p
+      | You can even set the font used when writing to the display. This could
+      | come in handy for making game sprites, tiles, interfaces, etc.
     p
       :markdown
-        The pixels for a character are stored in two words, `0x8180 + (v *
-        2)`, and `0x8180 + (v * 2) + 1`, where `v` is the character's ASCII
-        value. These two words store the pixels in the format
-        `aaaaaaaabbbbbbbb ccccccccdddddddd`, where `a` is the leftmost column,
-        `b` is the next, `c` is the third, and `d` is the rightmost, and each
-        bit defines whether or not a pixel is visible. The columns are stored
-        going from top-to-bottom.
+        The pixels for a character are stored in two words, `<base> + (v *
+        2)`, and `<base> + (v * 2) + 1`, where `v` is the character's ASCII
+        value and `<base>` is the location in memory where the font is mapped.
+        These two words store the pixels in the format `aaaaaaaabbbbbbbb
+        ccccccccdddddddd`, where `a` is the leftmost column, `b` is the next,
+        `c` is the third, and `d` is the rightmost, and each bit defines
+        whether or not a pixel is visible. The columns are stored going from
+        top-to-bottom.
     h2 Input
-    p You can also get keyboard input. The system may seem confusing at first,
-      but once you get the hang of it, you will be able to make some sweet
-      games, or maybe a text editor.
+    p
+      | You can also get keyboard input. The system may seem confusing at
+      | first, but once you get the hang of it, you will be able to make some
+      | sweet games, or maybe a text editor.
     p
       :markdown
-        The input buffer is at the address range from **0x9000** to
-        **0x900f**. It is a cyclic buffer, meaning that each time a key is
-        hit, it is saved in the next address over (and if it gets to 0x900f,
-        it resets back to 0x9000). If you read a value from there, **it is
-        important that you set the buffer to 0 after you are done**. If the
-        buffer still has something in it, the program won't be able to save
-        new key presses.
-        Don't want to have to loop through this buffer to find the last key?
-        There is a pointer at **0x9010** that stores the address of the last
-        key the program stored.
+        The keyboard is a [generic
+        keyboard](http://www.0xwiki.com/wiki/Keyboard) and is largely
+        interrupt-driven.
   div
     h2 The future
-    p We will certainly be adding more I/O as Notch announces it, or as we
-      figure it out. For instance, disk storage will be here shortly. Also, by
-      the time the real game comes out, we will know how to control the
-      systems of your ship (weapons, engines, communication, etc.). Until
-      then, work with what you have, and show us something awesome!
+    p
+      | We will certainly be adding more I/O as Notch announces it, or as we
+      | figure it out. For instance, disk storage will be here shortly. Also,
+      | by the time the real game comes out, we will know how to control the
+      | systems of your ship (weapons, engines, communication, etc.). Until
+      | then, work with what you have, and show us something awesome!
