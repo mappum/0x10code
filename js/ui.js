@@ -296,7 +296,7 @@ $(function() {
     		}
     	}
     	if(window.requestAnimationFrame) window.requestAnimationFrame(drawLoop);
-    	else setTimeout(drawLoop, 16);
+    	else setTimeout(drawLoop, 18);
     };
     drawLoop();
     
@@ -481,24 +481,24 @@ $(function() {
     }
     
     function drawDebug() {
-    	try {
-	    	stepped = false;
-			   
-			$('#debugDump').val(cpu.getDump());
-	    		
-			editor.setLineClass(pcLine, null, null);
-			pcLine = editor.setLineClass(assembler.instructionMap[assembler.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
-		} catch(e) {
-		   	
+    	if($('#debug').hasClass('active') && cpu.running) {
+	    	try {
+		    	stepped = false;
+				   
+				$('#debugDump').val(cpu.getDump());
+		    		
+				editor.setLineClass(pcLine, null, null);
+				pcLine = editor.setLineClass(assembler.instructionMap[assembler.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
+			} catch(e) {
+			   	
+			}
 		}
     };
     
     var pcLine = 0, errorLine = 0;
     var lastRam, stepped = false;
     function debugLoop() {
-    	if($('#debug').hasClass('active') && cpu.running) {
-    		drawDebug();
-       }
+    	drawDebug();
        setTimeout(debugLoop, 250);
     }
     //debugLoop();

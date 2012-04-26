@@ -95,11 +95,9 @@ var CPU = function CPU() {
 
     // Execution parameters
     this.throttled = true; //whether or not to control speed
-    this.speedScale = 14; //how fast to auto-adjust execution speed
-                           // (higher means smoother speeds, lower means more accuracy)
-
-    this.speed = 100000; //speed in hz
-    this.loopBatch = 1600; //the number of loops to execute at a time in run
+    this.speedWindow = 4; //how much time to use for the speed average (seconds)
+    this.speed = 140000; //speed in hz
+    this.loopBatch = 3000; //the number of loops to execute at a time in run
 
 
     this._stop = false;
