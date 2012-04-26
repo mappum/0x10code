@@ -53,7 +53,7 @@ $(function() {
     	val &= 0xf;
     	
     	var color;
-    	if(palette.start < cpu.ramSize) color = cpu.mem[palette.start + val];
+    	if(palette.address < cpu.ramSize) color = cpu.mem[palette.address + val];
     	else color = defaultPalette[val];
     	
     	var r = ((color & 0xf00) >> 8) * 17;
@@ -141,8 +141,8 @@ $(function() {
  	});
  	
  	var font = cpu.onSet(cpu.ramSize, 128, function(key, val) {
- 		if(screen.start < cpu.ramSize) {
-	 		var displayRam = cpu.mem.slice(screen.start, screen.end + 1);
+ 		if(screen.address < cpu.ramSize) {
+	 		var displayRam = cpu.mem.slice(screen.address, screen.address + screen.length + 1);
 	    	var value = Math.floor(key / 2);
 	    		
 	    	for(var i = 0; i < displayRam.length; i++) {
@@ -154,8 +154,8 @@ $(function() {
  	});
  	
  	var palette = cpu.onSet(cpu.ramSize, 16, function(key, val) {
- 		if(screen.start < cpu.ramSize) {
-	 		var displayRam = cpu.mem.slice(screen.start, screen.end + 1);
+ 		if(screen.address < cpu.ramSize) {
+	 		var displayRam = cpu.mem.slice(screen.address, screen.address + screen.length + 1);
 	    		
 	    	for(var i = 0; i < displayRam.length; i++) {
 		    	if(((displayRam[i] & 0xf00) >> 8) === key
@@ -175,9 +175,9 @@ $(function() {
  				// MEM_MAP_SCREEN
  				case 0:
  					if(cpu.mem.b > 0) {
- 						screen.start = cpu.mem.b;
+ 						screen.address = cpu.mem.b;
  					} else {
- 						screen.start = cpu.ramSize;
+ 						screen.address = cpu.ramSize;
  					}
  					drawScreen();
  					break;
@@ -185,9 +185,9 @@ $(function() {
  				// MEM_MAP_FONT
  				case 1:
  					if(cpu.mem.b > 0) {
- 						font.start = cpu.mem.b;
+ 						font.address = cpu.mem.b;
  					} else {
- 						font.start = cpu.ramSize;
+ 						font.address = cpu.ramSize;
  					}
  					drawScreen();
  					break;
@@ -195,9 +195,9 @@ $(function() {
  				// MEM_MAP_PALETTE
  				case 2:
  					if(cpu.mem.b > 0) {
- 						palette.start = cpu.mem.b;
+ 						palette.address = cpu.mem.b;
  					} else {
- 						palette.start = cpu.ramSize;
+ 						palette.address = cpu.ramSize;
  					}
  					drawScreen();
  					break;
@@ -257,7 +257,7 @@ $(function() {
             bg = getColor((value >> 8) & 0xf),
             blink = ((value >> 7) & 1) === 1;
     	var fontChar;
-    	if(font.start < cpu.ramSize) fontChar = [cpu.mem[font.start+charValue * 2], cpu.mem[font.start+charValue * 2 + 1]];
+    	if(font.address < cpu.ramSize) fontChar = [cpu.mem[font.address+charValue * 2], cpu.mem[font.address+charValue * 2 + 1]];
     	else fontChar = [defaultFont[charValue * 2], defaultFont[charValue * 2 + 1]];
 		
 		ctx.fillStyle = bg;
@@ -288,8 +288,8 @@ $(function() {
     	for(var i = 0; i < rows; i++) {
     		for(var j = 0; j < cols; j++) {
     			var cell = cellQueue[i][j];
-    			if(cell && screen.start < cpu.ramSize) {
-    				drawChar(cpu.mem[screen.start + (i * cols) + j], j, i);
+    			if(cell && screen.address < cpu.ramSize) {
+    				drawChar(cpu.mem[screen.address + (i * cols) + j], j, i);
     				cellQueue[i][j] = false;
     			}
     		}
@@ -377,11 +377,13 @@ $(function() {
     				break;
     			
     			case 1:
-    				cpu.mem.c = keyboardBuffer.shift() || 0;
+    				var k = keyboardBuffer.shift() || 0;
+    				cpu.mem.c = k;
+    				if(k) console.log(cpu.mem.c);
     				break;
     				
     			case 2:
-    				cpu.mem.c = keysDown[cpu.mem.b] * 1;
+    				cpu.mem.c = (keysDown[cpu.mem.b] * 1);
     				break;
     				
     			case 3:
@@ -423,7 +425,6 @@ $(function() {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
     		var key = keyMap[e.keyCode] || e.keyCode;
     		if(key <= 0x7f) {
-	    		keysDown[key] = false;
 	    		keyEvent(key);
 	    		return true;
     		}
