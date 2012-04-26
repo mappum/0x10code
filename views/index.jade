@@ -2,7 +2,6 @@ doctype 5
 html(lang='en')
   head
     title= sitename
-      &nbsp;-&nbsp;
       block title
       | - The easy DCPU-16 sharer
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
@@ -29,6 +28,14 @@ html(lang='en')
     div.container-fluid
       div.row-fluid
         div.span9
+          div.alert.alert-error
+            strong Warning!
+            p Notch is making big changes to the DCPU right now. I am working hard to keep my emulator up-to-date with his, but I am waiting until he has finished it before put$
+            p
+              span The new DCPU spec is available
+                a(href="http://dcpu.com/highnerd/dcpu16_1_3.txt") here
+              span , and the display spec is available
+                a(href="http://dcpu.com/highnerd/lem1802.txt") here.
           block content
         div.span3
           block sidebar

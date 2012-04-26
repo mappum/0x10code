@@ -8,6 +8,10 @@ exports.links = [
 	{
 		title:	"0x10c Wiki",
 		url:	"http://0x10cwiki.com/"
+	},
+	{
+		title: "Hosted by VPSNode",
+		url: "http://vpsno.de/"
 	}
 ];
 // best to have an image of 38px height
