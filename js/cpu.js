@@ -45,6 +45,7 @@ var opcodes = [
     {id: 'SHR', code: 0x0c, cost: 2, args: 2},
     {id: 'ASR', code: 0x0d, cost: 2, args: 2},
     {id: 'SHL', code: 0x0e, cost: 2, args: 2},
+    {id: 'STI', code: 0x0f, cost: 2, args: 2},
     {id: 'IFB', code: 0x10, cost: 2, args: 2},
     {id: 'IFC', code: 0x11, cost: 2, args: 2},
     {id: 'IFE', code: 0x12, cost: 2, args: 2},
@@ -54,11 +55,12 @@ var opcodes = [
     {id: 'IFL', code: 0x16, cost: 2, args: 2},
     {id: 'IFU', code: 0x17, cost: 2, args: 2},
     {id: 'ADX', code: 0x1a, cost: 3, args: 2},
-    {id: 'SUX', code: 0x1b, cost: 3, args: 2},
+    {id: 'SBX', code: 0x1b, cost: 3, args: 2},
 
     //non-basic ops
     {id: 'JSR', code: 0x20, cost: 3, args: 1},
     {id: 'BRK', code: 0x40, cost: 0, args: 0},
+    {id: 'HCF', code: 0xe0, cost: 9, args: 1},
     {id: 'INT', code: 0x100, cost: 4, args: 1},
     {id: 'IAG', code: 0x120, cost: 1, args: 1},
     {id: 'IAS', code: 0x140, cost: 1, args: 1},
@@ -70,8 +72,8 @@ var opcodes = [
 root.OPCODES = {};
 
 for(var i = 0; i < opcodes.length; i++) {
-	OPCODES[opcodes[i].id] = opcodes[i];
-	OPCODES[opcodes[i].code] = opcodes[i];
+	root.OPCODES[opcodes[i].id] = opcodes[i];
+	root.OPCODES[opcodes[i].code] = opcodes[i];
 }
 
 root.REGISTER_NAMES = ['a', 'b', 'c', 'x', 'y', 'z', 'i', 'j'];
@@ -141,7 +143,8 @@ CPU.prototype = {
         var r, address;
         // Handle the simple register cases first
         if(value <= 0x17 || value === 0x1a) {
-            r = REGISTER_NAMES[value % 8] || 'sp';
+            r = root.REGISTER_NAMES[value % 8];
+            if(value === 0x1a) r = 'sp';
             if(0x00 <= value && value <= 0x07) {
                 address = r;
             } else if(0x08 <= value && value <= 0x0F) {
@@ -156,7 +159,7 @@ CPU.prototype = {
         if(value >= 0x20 && value <= 0x3f) {
         	var output = value - 0x21;
         	output &= this.maxValue;
-            return output | FLAG_LITERAL;
+            return output | root.FLAG_LITERAL;
         }
 
         // Other kinds of values
@@ -187,7 +190,7 @@ CPU.prototype = {
             case 0x1e: // as address
                 return this.nextWord();
             case 0x1f: // as literal
-                return this.nextWord() | FLAG_LITERAL;
+                return this.nextWord() | root.FLAG_LITERAL;
 
             default:
                 throw new Error('Encountered unknown argument type 0x' + value.toString(16));
@@ -196,14 +199,14 @@ CPU.prototype = {
     get: function(key) {
         if (typeof key === 'number') {
             // If the key is flagged as a literal, return the value
-            if(key & FLAG_LITERAL) return key ^ FLAG_LITERAL;
+            if(key & root.FLAG_LITERAL) return key ^ root.FLAG_LITERAL;
             key &= this.maxValue;
         }
 
 		for(var i = 0; i < this._getListeners.length; i++) {
 			var listener = this._getListeners[i];
-			if(key >= listener.start && key <= listener.end) {
-				var value = listener.callback(key - listener.start);
+			if(key >= listener.address && key < listener.address + listener.length) {
+				var value = listener.callback(key - listener.address);
 				if(value) return value;
 			}
 		}
@@ -214,7 +217,7 @@ CPU.prototype = {
     set: function(key, value) {
         if (typeof key === 'number') {
             // If the key is flagged as a literal, don't set.
-            if (key & FLAG_LITERAL) return;
+            if (key & root.FLAG_LITERAL) return;
             key &= this.maxValue;
         } else if(key === 'push') {
         	this.set('sp', (this.get('sp') - 1) & this.maxValue);
@@ -228,28 +231,33 @@ CPU.prototype = {
         
         for(var i = 0; i < this._setListeners.length; i++) {
 			var listener = this._setListeners[i];
-			if(key >= listener.start && key <= listener.end) {
-				if(listener.callback(key - listener.start, value) === true) return;
+			if(key >= listener.address && key < listener.address + listener.length) {
+				if(listener.callback(key - listener.address, value) === true) return;
 			}
 		}
 
         this.mem[key] = value;
+    },
+    skip: function() {
+    	var sp = this.get('sp');
+    	this.nextInstruction();
+    	this.set('sp', sp);
     },
     step: function() {    	
         var insn, aVal, bVal, result;
 
         // Fetch the instruction
         insn = this.nextInstruction();
-        if(OPCODES[insn.opcode] === undefined)
+        if(root.OPCODES[insn.opcode] === undefined)
         	throw new Error('Encountered invalid opcode 0x' + insn.opcode.toString(16));
         
-        this.cycle += OPCODES[insn.opcode].cost || 0;
-
+        this.cycle += root.OPCODES[insn.opcode].cost || 0;
+        
         // Read the arguments
+        aVal = this.get(insn.a);
         if(insn.opcode !== 0) {
             bVal = this.get(insn.b);
         }
-        aVal = this.get(insn.a);
 
         switch (insn.opcode) {
         	// null
@@ -349,11 +357,20 @@ CPU.prototype = {
                 this.set(insn.b, bVal << aVal);
                 this.set('ex', (bVal << aVal) >> 16);
                 break;
+                
+            // STI
+            case 0xf:
+            	this.set(insn.b, aVal);
+            	this.set('i', this.get('i') + 1);
+            	this.set('j', this.get('j') + 1);
+            	break;
 
             // IFB
             case 0x10:
                 if((bVal & aVal) === 0) {
-                    this.nextInstruction(); // skip
+                    var opcode;
+                    do{ this.skip(); opcode = this.mem[this.mem.pc] & 0xff; }
+                    while(opcode >= 0x10 && opcode <= 0x17); // skip
                     this.cycle += 1;
                 }
                 break;
@@ -361,7 +378,9 @@ CPU.prototype = {
             // IFC
             case 0x11:
             	if(bVal & aVal) {
-                    this.nextInstruction(); // skip
+            		var opcode;
+                    do{ this.skip(); opcode = this.mem[this.mem.pc] & 0xff; }
+                    while(opcode >= 0x10 && opcode <= 0x17); // skip
                     this.cycle += 1;
                 }
             	break;
@@ -369,7 +388,9 @@ CPU.prototype = {
             // IFE
             case 0x12:
                 if(bVal !== aVal) {
-                    this.nextInstruction(); // skip
+                    var opcode;
+                    do{ this.skip(); opcode = this.mem[this.mem.pc] & 0xff; }
+                    while(opcode >= 0x10 && opcode <= 0x17); // skip
                     this.cycle += 1;
                 }
                 break;
@@ -377,7 +398,9 @@ CPU.prototype = {
             // IFN
             case 0x13:
                 if(bVal === aVal) {
-                    this.nextInstruction(); // skip
+                    var opcode;
+                    do{ this.skip(); opcode = this.mem[this.mem.pc] & 0xff; }
+                    while(opcode >= 0x10 && opcode <= 0x17); // skip
                     this.cycle += 1;
                 }
                 break;
@@ -385,7 +408,9 @@ CPU.prototype = {
             // IFG
             case 0x14:
                 if(bVal <= aVal) {
-                    this.nextInstruction(); // skip
+                    var opcode;
+                    do{ this.skip(); opcode = this.mem[this.mem.pc] & 0xff; }
+                    while(opcode >= 0x10 && opcode <= 0x17); // skip
                     this.cycle += 1;
                 }
                 break;
@@ -393,7 +418,9 @@ CPU.prototype = {
             // IFA
             case 0x15:
             	if(getSigned(bVal) <= getSigned(aVal)) {
-                    this.nextInstruction(); // skip
+                    var opcode;
+                    do{ this.skip(); opcode = this.mem[this.mem.pc] & 0xff; }
+                    while(opcode >= 0x10 && opcode <= 0x17); // skip
                     this.cycle += 1;
                 }
             	break;
@@ -401,7 +428,9 @@ CPU.prototype = {
             // IFL
             case 0x16:
             	if(bVal >= aVal) {
-                    this.nextInstruction(); // skip
+                    var opcode;
+                    do{ this.skip(); opcode = this.mem[this.mem.pc] & 0xff; }
+                    while(opcode >= 0x10 && opcode <= 0x17); // skip
                     this.cycle += 1;
                 }
             	break;
@@ -409,7 +438,9 @@ CPU.prototype = {
             // IFU
             case 0x17:
             	if(getSigned(bVal) >= getSigned(aVal)) {
-                    this.nextInstruction(); // skip
+            		var opcode;
+                    do{ this.skip(); opcode = this.mem[this.mem.pc] & 0xff; }
+                    while(opcode >= 0x10 && opcode <= 0x17); // skip
                     this.cycle += 1;
                 }
             	break;
@@ -422,7 +453,7 @@ CPU.prototype = {
             	this.set(insn.b, value);
             	break;
             	
-             // SUX
+             // SBX
             case 0x1b:
             	var value = bVal - aVal + this.mem.ex;
             	if(value < 0) this.mem.ex = 0xffff;
@@ -440,6 +471,13 @@ CPU.prototype = {
             case 0x40:
                 this.stop();
                 break;
+                
+            // HCF
+            case 0xe0:
+            	this.stop();
+            	this.end();
+            	this.clear();
+            	break;
             
             // INT
             case 0x100:
@@ -464,17 +502,17 @@ CPU.prototype = {
             // HWQ
             case 0x220:
             	if(this._devices[aVal]) {
-            		this.set('a', this._devices[aVal].id >> 16);
-            		this.set('b', this._devices[aVal].id & 0xff);
-            		this.set('c', this._devices[aVal].version);
-            		this.set('x', this._devices[aVal].manufacturer >> 16);
-            		this.set('y', this._devices[aVal].manufacturer & 0xff);
+            		this.mem.b = (this._devices[aVal].id >> 16);
+            		this.mem.a = (this._devices[aVal].id & 0xffff);
+            		this.mem.c = this._devices[aVal].version;
+            		this.mem.y = (this._devices[aVal].manufacturer >> 16);
+            		this.mem.x = (this._devices[aVal].manufacturer & 0xffff);
             	} else {
-            		this.set('a', 0);
-            		this.set('b', 0);
-            		this.set('c', 0);
-            		this.set('x', 0);
-            		this.set('y', 0);
+            		this.mem.b = 0;
+            		this.mem.a = 0;
+            		this.mem.c = 0;
+            		this.mem.y = 0;
+            		this.mem.x = 0;
             	}
             	break;
             
@@ -540,8 +578,8 @@ CPU.prototype = {
     },
     clear: function() {
         var i = 0, _len;
-        for( _len = REGISTER_NAMES.length; i < _len; ++i) {
-            this.mem[REGISTER_NAMES[i]] = 0;
+        for( _len = root.REGISTER_NAMES.length; i < _len; ++i) {
+            this.mem[root.REGISTER_NAMES[i]] = 0;
         }
         for( i = 0, _len = this.ramSize; i < _len; ++i) {
             this.mem[i] = 0;
@@ -593,8 +631,8 @@ CPU.prototype = {
     	}
     	
     	var listener = {
-        	start: address,
-        	end: address + length - 1,
+        	address: address,
+        	length: length,
         	callback: callback
         };
         this._getListeners.push(listener);
@@ -607,8 +645,8 @@ CPU.prototype = {
     	}
     	
         var listener = {
-        	start: address,
-        	end: address + length - 1,
+        	address: address,
+        	length: length,
         	callback: callback
         };
         this._setListeners.push(listener);
@@ -664,9 +702,9 @@ CPU.prototype = {
     }
 };
 
-CPU.FLAG_LITERAL = FLAG_LITERAL;
-CPU.REGISTER_NAMES = REGISTER_NAMES;
-CPU.OPCODES = OPCODES;
+CPU.FLAG_LITERAL = root.FLAG_LITERAL;
+CPU.REGISTER_NAMES = root.REGISTER_NAMES;
+CPU.OPCODES = root.OPCODES;
 
 if (typeof module === 'undefined') {
     (root.DCPU16 = (root.DCPU16 || {})).CPU = CPU;
