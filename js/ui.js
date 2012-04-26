@@ -43,6 +43,7 @@ $(function() {
     var cpu = new DCPU16.CPU(), assembler, notRun = false;
     var instructionMap = [], addressMap = [];
     var pcLine = 0, errorLine = 0;
+    var devices = [];
     
     function clearScreen() {
     	ctx.fillStyle = getColor(0);
@@ -166,7 +167,7 @@ $(function() {
     	}
  	});
  
- 	var displayDevice = cpu.addDevice({
+ 	var displayDevice = {
  		id: 0x7349f615,
  		version: 0x1802,
  		manufacturer: 0x1c6c8b36,
@@ -211,7 +212,8 @@ $(function() {
  					break;
  			}
  		}
- 	});
+ 	};
+ 	devices.push(displayDevice);
     
     for(var i = 0; i < rows; i++) {
     	cellQueue.push([]);
@@ -283,6 +285,52 @@ $(function() {
     	setTimeout(blinkLoop, blinkInterval);
     };
     blinkLoop();
+    
+    var clockOn = false, clockInterrupt = false, clockTicks = 0;
+    var clock = {
+    	id: 0x12d0b402,
+    	version: 0,
+    	manufacturer: 0,
+    	onInterrupt: function() {
+    		switch(cpu.mem.a) {
+    			case 0:
+    				if(cpu.mem.b) {
+    					clockTicks = 0;
+    					if(!clockOn) clockTick();
+    					clockOn = true;
+    				} else {
+    					clockOn = false;
+    				}
+    				break;
+    				
+    			case 1:
+    				cpu.mem.c = clockTicks;
+    				break;
+    			
+    			case 2:
+    				if(cpu.mem.b) clockInterrupt = true;
+    				else clockInterrupt = false;
+    				break;
+    		}
+    	}
+    };
+    devices.push(clock);
+    
+    function clockTick() {
+    	if(clockInterrupt) {
+    		cpu.interrupt(2);
+    	}
+    	
+    	clockTicks++;
+    	
+    	if(clockOn) setTimeout(clockTick, 1000 / 60);
+    };
+    
+    while(devices.length > 0) {
+    	var index = Math.floor(Math.random() * devices.length);
+    	cpu.addDevice(devices[index]);
+    	devices.splice(index, 1);
+    }
     
     function compile() {
         $('#error').hide();
