@@ -357,7 +357,16 @@ $(function() {
     var keyInterrupts = false;
     var keyboardBuffer = [], keysDown = [];
     var keyMap = {
-    	
+    	8: 10,
+    	13: 11,
+    	45: 12,
+    	46: 13,
+    	38: 80,
+    	40: 81,
+    	37: 82,
+    	39: 83,
+    	16: 90,
+    	17: 91
     };
     var keyboard = {
     	id: 0x30cf7406,
@@ -398,25 +407,29 @@ $(function() {
     $('body').keydown(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
     		var key = keyMap[e.keyCode] || e.keyCode;
-    		
     		keysDown[key] = true;
     		keyEvent(key);
+    		return true;
     	}
     });
     
     $('body').keyup(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
     		var key = keyMap[e.keyCode] || e.keyCode;
-    		
     		keysDown[key] = false;
     		keyEvent(key);
+    		return true;
     	}
     });
     
     $('body').keypress(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
     		var key = keyMap[e.keyCode] || e.keyCode;
-    		keyEvent(key);
+    		if(key <= 0x7f) {
+	    		keysDown[key] = false;
+	    		keyEvent(key);
+	    		return true;
+    		}
     	}
     });
     
