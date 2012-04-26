@@ -379,11 +379,11 @@ $(function() {
     				break;
     			
     			case 1:
-    				cpu.set('c', keyboardBuffer.shift() || 0);
+    				cpu.mem.c = keyboardBuffer.shift() || 0;
     				break;
     				
     			case 2:
-    				cpu.set('c', keysDown[cpu.mem.b] * 1);
+    				cpu.mem.c = keysDown[cpu.mem.b] * 1;
     				break;
     				
     			case 3:
