@@ -396,8 +396,6 @@ $(function() {
     devices.push(keyboard);
     
     function keyEvent(key) {
-    	keyboardBuffer.push(key);
-    	
     	if(keyInterrupts) {
     		cpu.interrupt();
     	}
@@ -425,6 +423,7 @@ $(function() {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
     		var key = keyMap[e.keyCode] || e.keyCode;
     		if(key <= 0x7f) {
+    			keyboardBuffer.push(key);
 	    		keyEvent(key);
 	    		return true;
     		}
