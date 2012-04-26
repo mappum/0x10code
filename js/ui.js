@@ -229,7 +229,6 @@ $(function() {
  					cpu.cycle += 16;
  					break;
  			}
- 			drawDebug();
  		}
  	};
  	devices.push(displayDevice);
@@ -339,7 +338,6 @@ $(function() {
     				else clockInterrupt = false;
     				break;
     		}
-    		drawDebug();
     	}
     };
     devices.push(clock);
@@ -391,7 +389,6 @@ $(function() {
     				else keyInterrupts = false;
     				break;
     		}
-    		drawDebug();
     	}
     };
     devices.push(keyboard);
