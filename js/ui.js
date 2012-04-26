@@ -478,7 +478,7 @@ $(function() {
     }
     
     function drawDebug() {
-    	if($('#debug').hasClass('active') && cpu.running) {
+    	if($('#debug').hasClass('active')) {
 	    	try {
 		    	stepped = false;
 				   
