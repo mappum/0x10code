@@ -42,7 +42,6 @@ $(function() {
     
     var cpu = new DCPU16.CPU(), assembler, notRun = false;
     var instructionMap = [], addressMap = [];
-    var pcLine = 0, errorLine = 0;
     var devices = [];
     
     function clearScreen() {
@@ -180,6 +179,7 @@ $(function() {
  					} else {
  						screen.start = cpu.ramSize;
  					}
+ 					drawScreen();
  					break;
  					
  				// MEM_MAP_FONT
@@ -189,6 +189,7 @@ $(function() {
  					} else {
  						font.start = cpu.ramSize;
  					}
+ 					drawScreen();
  					break;
  					
  				// MEM_MAP_PALETTE
@@ -198,10 +199,11 @@ $(function() {
  					} else {
  						palette.start = cpu.ramSize;
  					}
+ 					drawScreen();
  					break;
  					
  				// SET_BORDER_COLOR
- 				case 2:
+ 				case 3:
  					var width = (charWidth * cols + borderSize * 2) * charScale,
 		    			height = (charHeight * rows + borderSize * 2) * charScale;
 		    		ctx.fillStyle = getColor(cpu.mem.b & 0xf);
@@ -222,6 +224,14 @@ $(function() {
     
     function queueChar(x, y) {
     	cellQueue[y][x] = true;
+    };
+    
+    function drawScreen() {
+    	for(var i = 0; i < rows; i++) {
+    		for(var j = 0; j < cols; j++) {
+    			queueChar(j, i);
+    		}	
+    	}
     };
     
     var blinkVisible = false;
@@ -326,6 +336,71 @@ $(function() {
     	if(clockOn) setTimeout(clockTick, 1000 / 60);
     };
     
+    var keyInterrupts = false;
+    var keyboardBuffer = [], keysDown = [];
+    var keyMap = {
+    	
+    };
+    var keyboard = {
+    	id: 0x30cf7406,
+    	version: 1,
+    	manufacturer: 0,
+    	onInterrupt: function() {
+    		switch(cpu.mem.a) {
+    			case 0:
+    				keyboardBuffer = [];
+    				break;
+    			
+    			case 1:
+    				cpu.set('c', keyboardBuffer.shift() || 0);
+    				break;
+    				
+    			case 2:
+    				cpu.set('c', keysDown[cpu.mem.b] * 1);
+    				break;
+    				
+    			case 3:
+    				if(cpu.mem.b) keyInterrupts = true;
+    				else keyInterrupts = false;
+    				break;
+    		}
+    	}
+    };
+    devices.push(keyboard);
+    
+    function keyEvent(key) {
+    	keyboardBuffer.push(key);
+    	
+    	if(keyInterrupts) {
+    		cpu.interrupt();
+    	}
+    };
+    
+    $('body').keydown(function(e) {
+    	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
+    		var key = keyMap[e.keyCode] || e.keyCode;
+    		
+    		keysDown[key] = true;
+    		keyEvent(key);
+    	}
+    });
+    
+    $('body').keyup(function(e) {
+    	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
+    		var key = keyMap[e.keyCode] || e.keyCode;
+    		
+    		keysDown[key] = false;
+    		keyEvent(key);
+    	}
+    });
+    
+    $('body').keypress(function(e) {
+    	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
+    		var key = keyMap[e.keyCode] || e.keyCode;
+    		keyEvent(key);
+    	}
+    });
+    
     while(devices.length > 0) {
     	var index = Math.floor(Math.random() * devices.length);
     	cpu.addDevice(devices[index]);
@@ -365,80 +440,36 @@ $(function() {
         cpu.clear();
         clearScreen();
         
+        keyInterrupts = false;
+   		keyboardBuffer = [];
+   		keysDown = [];
+        
         editor.setLineClass(pcLine, null, null);
         editor.setLineClass(errorLine, null, null);
     }
     
+    function drawDebug() {
+    	try {
+	    	stepped = false;
+			   
+			$('#debugDump').val(cpu.getDump());
+	    		
+			editor.setLineClass(pcLine, null, null);
+			pcLine = editor.setLineClass(assembler.instructionMap[assembler.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
+		} catch(e) {
+		   	
+		}
+    };
+    
+    var pcLine = 0, errorLine = 0;
     var lastRam, stepped = false;
     function debugLoop() {
-    	if($('#debug').hasClass('active') && cpu.running || stepped) {
-    		stepped = false;
-    		
-		    editor.setLineClass(pcLine, null, null);
-		    pcLine = editor.setLineClass(assembler.instructionMap[assembler.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
-		    
-		    function updateRegister(name) {
-		    	$('#' + name + ' .val').text(formatWord(cpu.mem[name]));
-		    	$('#' + name + ' .point').text(formatWord(cpu.mem[cpu.mem[name]]));
-		    }
-		    
-		    for(var i = 0; i < REGISTER_NAMES.length; i++) {
-		    	updateRegister(REGISTER_NAMES[i]);
-		    }
-		    updateRegister('pc');
-		    updateRegister('o');
-		    
-		    $('#sp .val').text(formatWord(cpu.mem.sp));
-		    $('#sp .point').text(formatWord(cpu.mem[cpu.mem.sp]));
-		    
-		    $('div.tooltip').remove();
-		    
-		    var rowN = 0, table = $('#memoryInfo');
-		    for(var i = 0; i < cpu.ramSize; i += 8) {
-	            var populated = false;
-	            for(var j = 0; j < 8; j++) {
-	            	if(cpu.mem[i + j] || cpu.mem.pc === i + j || cpu.mem.sp === i + j) {
-	                    populated = true;
-	                    break;
-	                }
-	            }
-	
-	            if(populated) {
-	            	var row = table.find('.row' + rowN);
-	                if(row.length === 0) {
-	                	row = $('<tr class="row' + rowN + '"></tr>');
-	                	table.append(row);
-	                	row.append('<td class="address"></td>');
-	                }
-	                
-	                row.children('.address').text(formatWord(i));
-					
-	                for(var j = 0; j < 8; j++) {
-	                	if(!lastRam || cpu.mem[i + j] !== lastRam[i + j]) {
-		                	var cell = row.children('.cell' + j);
-		                	if(cell.length === 0) {
-		                		cell = $('<td class="cell' + j + '"></td>');
-		                		row.append(cell);
-		                	}
-		                	
-		                	cell.tooltip({
-			                	title: editor.getLine(instructionMap[addressMap[j+i]] - 1)
-			                });
-			                cell.text(formatWord(cpu.mem[i + j]));
-	                	}
-	                }
-	                
-	                
-	                rowN++;
-	            }
-	        }
-	        lastRam = cpu.mem.slice(0);
-	        
-	        $('#cycle').text(cpu.cycle);
+    	if($('#debug').hasClass('active') && cpu.running) {
+    		drawDebug();
        }
-       setTimeout(debugLoop, 100);
+       setTimeout(debugLoop, 250);
     }
-    debugLoop();
+    //debugLoop();
     
     cpu.onEnd(function() {
         $('#debug').removeClass('disabled');
@@ -464,7 +495,6 @@ $(function() {
     $('#stop').click(function() {
         if(!$(this).hasClass('disabled'))
             cpu.stop();
-            stepped = true;
     });
     
     $('#debug').click(function() {
@@ -491,8 +521,8 @@ $(function() {
     $('#step').click(function() {
         if(!$(this).hasClass('disabled')) {
             cpu.step();
-		    editor.setLineClass(pcLine, null, null);
-		    pcLine = editor.setLineClass(assembler.instructionMap[assembler.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
+            stepped = true;
+            drawDebug();
         }
     });
     
