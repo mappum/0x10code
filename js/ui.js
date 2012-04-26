@@ -213,6 +213,7 @@ $(function() {
 		    		ctx.fillRect(width - borderSize * charScale, 0, borderSize * charScale, height);
  					break;
  			}
+ 			drawDebug();
  		}
  	};
  	devices.push(displayDevice);
@@ -322,6 +323,7 @@ $(function() {
     				else clockInterrupt = false;
     				break;
     		}
+    		drawDebug();
     	}
     };
     devices.push(clock);
@@ -364,6 +366,7 @@ $(function() {
     				else keyInterrupts = false;
     				break;
     		}
+    		drawDebug();
     	}
     };
     devices.push(keyboard);
