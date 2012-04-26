@@ -44,15 +44,6 @@ $(function() {
     var instructionMap = [], addressMap = [];
     var pcLine = 0, errorLine = 0;
     
-    cpu.onEnd(function() {
-    	console.log('ended');
-        $('#debug').removeClass('disabled');
-        $('#step').removeClass('disabled');
-        $('#reset').removeClass('disabled');
-        $('#run').removeClass('disabled');
-        $('#run span').text('Run');
-    });
-    
     function clearScreen() {
     	ctx.fillStyle = getColor(0);
         ctx.fillRect(0, 0, 500, 500);
@@ -358,9 +349,7 @@ $(function() {
 		    for(var i = 0; i < cpu.ramSize; i += 8) {
 	            var populated = false;
 	            for(var j = 0; j < 8; j++) {
-	            	if(cpu.getDevice(i + j)) {
-	            		break;
-	            	} else if(cpu.mem[i + j] || cpu.mem.pc === i + j || cpu.mem.sp === i + j) {
+	            	if(cpu.mem[i + j] || cpu.mem.pc === i + j || cpu.mem.sp === i + j) {
 	                    populated = true;
 	                    break;
 	                }
@@ -402,16 +391,24 @@ $(function() {
        setTimeout(debugLoop, 100);
     }
     debugLoop();
+    
+    cpu.onEnd(function() {
+        $('#debug').removeClass('disabled');
+        $('#step').removeClass('disabled');
+        $('#reset').removeClass('disabled');
+        $('#run').removeClass('disabled');
+        $('#run span').text('Run');
+    });
 
     $('#run').click(function() {
         if(!$(this).hasClass('disabled')) {
             if(compile()) {
             	notRun = false;
-                cpu.run();
                 $('#step').addClass('disabled');
                 $('#run').addClass('disabled');
                 $('#run span').text('Running...');
                 $('#reset').addClass('disabled');
+                cpu.run();
             }
         }
     });
