@@ -1,29 +1,64 @@
 extends index
 
 block content
-  h1 I/O Spec
-  p As of now, there is no standard I/O spec for the DCPU. All we know for sure is a basic idea of how the assembly will work, but Notch will be able to add things as 0x10c is developed. That means for right now, we're basically just guessing on how the display and input will work. On this page, I will document the current I/O spec we are conforming to, so you don't have to figure it out yourself. All of this is subject to change and break old code, so don't get too attached to one piece of software.
+  h1 I/O Specification
+  p The DCPU does not have built-in I/O hardware, but 0x10code provides
+    standard peripherals for interacting with users.
   div
     h2 Display 
-    p The display is that weird little grey box you see the the right of your code. How do you write stuff to it?
+    p The display is that weird little grey box you see to the right of your
+      code. How do you write stuff to it?
     p
       :markdown
-        It is **32 columns** by **12 rows**, and the memory is mapped from address `0x8000` to `0x817f`. 0x8000 is the top left cell, 0x8001 is the next one over, and 0x8020 is first cell of the second row.
-        When you write to one of these cells, you do it in the following bit format: `HRGB HRGB B CCCCCCC` where the first set of HRGB is the color of the text, the next `HRGB` is the color of the background (with `H` being 'highlight', making the colors brighter), `B` is whether or not to blink the cell, and `C` is the ASCII character value.
+        In a nutshell, 0x10code implements a standard
+        [LEM1802](http://www.0xwiki.com/wiki/LEM1802_Display) display. In
+        order to write to the display, first map the display to an appropriate
+        location in memory, then write to that memory location.
     p
       :markdown
-        You may also set the color of the screen border by writing to `0x8280` in the same `HRGB` color format as cells. 
+        When you write to one of these cells, you do it in the following bit
+        format: `HRGB HRGB B CCCCCCC` where the first set of HRGB is the color
+        of the text, the next `HRGB` is the color of the background (with `H`
+        being 'highlight', making the colors brighter), `B` is whether or not
+        to blink the cell, and `C` is the ASCII character value.
+    p
+      :markdown
+        The color of the border of the display may also be set by calling a
+        hardware interrupt with key `SET_BORDER_COLOR` and the value in the
+        same `HRGB` color format as cells. `SET A,
+        SET_BORDER_COLOR; SET B, <HRGB color>; HWI <address of display>`
     h2 Fonts
-    p You can even set the font used when writing to the display. THis could come in handy for making game sprites, tiles, interfaces, etc.
+    p You can even set the font used when writing to the display. This could
+      come in handy for making game sprites, tiles, interfaces, etc.
     p
       :markdown
-        The pixels for a character are stored in two words, `0x8180 + (v * 2)`, and `0x8180 + (v * 2) + 1`, where `v` is the character's ASCII value. These two words store the pixels in the format `aaaaaaaabbbbbbbb ccccccccdddddddd`, where `a` is the leftmost column, `b` is the next, `c` is the third, and `d` is the rightmost, and each bit defines whether or not a pixel is visible. The columns are stored going from top-to-bottom.
+        The pixels for a character are stored in two words, `0x8180 + (v *
+        2)`, and `0x8180 + (v * 2) + 1`, where `v` is the character's ASCII
+        value. These two words store the pixels in the format
+        `aaaaaaaabbbbbbbb ccccccccdddddddd`, where `a` is the leftmost column,
+        `b` is the next, `c` is the third, and `d` is the rightmost, and each
+        bit defines whether or not a pixel is visible. The columns are stored
+        going from top-to-bottom.
     h2 Input
-    p You can also get keyboard input. The system may seem confusing at first, but once you get the hang of it, you will be able to make some sweet games, or maybe a text editor.
+    p You can also get keyboard input. The system may seem confusing at first,
+      but once you get the hang of it, you will be able to make some sweet
+      games, or maybe a text editor.
     p
       :markdown
-        The input buffer is at the address range from **0x9000** to **0x900f**. It is a cyclic buffer, meaning that each time a key is hit, it is saved in the next address over (and if it gets to 0x900f, it resets back to 0x9000). If you read a value from there, **it is important that you set the buffer to 0 after you are done**. If the buffer still has something in it, the program won't be able to save new keypresses.
-        Don't want to have to loop through this buffer to find the last key? There is a pointer at **0x9010** that stores the address of the last key the program stored.
+        The input buffer is at the address range from **0x9000** to
+        **0x900f**. It is a cyclic buffer, meaning that each time a key is
+        hit, it is saved in the next address over (and if it gets to 0x900f,
+        it resets back to 0x9000). If you read a value from there, **it is
+        important that you set the buffer to 0 after you are done**. If the
+        buffer still has something in it, the program won't be able to save
+        new key presses.
+        Don't want to have to loop through this buffer to find the last key?
+        There is a pointer at **0x9010** that stores the address of the last
+        key the program stored.
   div
     h2 The future
-    p We will certainly be adding more I/O as Notch announces it, or as we figure it out. For instance, disk storage will be here shortly. Also, by the time the real game comes out, we will know how to control the systems of your ship (weapons, engines, communication, etc.). Until then, work with what you have, and show us something awesome!
+    p We will certainly be adding more I/O as Notch announces it, or as we
+      figure it out. For instance, disk storage will be here shortly. Also, by
+      the time the real game comes out, we will know how to control the
+      systems of your ship (weapons, engines, communication, etc.). Until
+      then, work with what you have, and show us something awesome!

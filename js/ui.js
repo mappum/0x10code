@@ -212,6 +212,22 @@ $(function() {
 		    		ctx.fillRect(0, 0, borderSize * charScale, height);
 		    		ctx.fillRect(width - borderSize * charScale, 0, borderSize * charScale, height);
  					break;
+ 				
+ 				// MEM_DUMP_FONT
+ 				case 4:
+ 					for(var i = 0; i < defaultFont.length; i++) {
+ 						cpu.mem[cpu.mem.b + i] = defaultFont[i];
+ 					}
+ 					cpu.cycle += 256;
+ 					break;
+ 					
+ 				// MEM_DUMP_PALETTE
+ 				case 5:
+ 					for(var i = 0; i < defaultPalette.length; i++) {
+ 						cpu.mem[cpu.mem.b + i] = defaultPalette[i];
+ 					}
+ 					cpu.cycle += 16;
+ 					break;
  			}
  			drawDebug();
  		}
