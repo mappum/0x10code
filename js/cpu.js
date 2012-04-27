@@ -253,9 +253,14 @@ CPU.prototype = {
     	this.set('sp', sp);
     },
     skipUntilNonif: function() {
+        // pc is at the instruction following our failed if, so:
+        //  - skip all consecutive ifs
+        //  - skip the last non-if instruction
     	var opcode;
-        do{ this.skip(); opcode = this.mem[this.mem.pc] & 0xff; }
-        while(opcode >= 0x10 && opcode <= 0x17);
+        do {
+          opcode = this.mem[this.mem.pc] & 0xff;
+          this.skip();
+        } while(opcode >= 0x10 && opcode <= 0x17);
     },
     step: function() {
     	if(this._triggerInterrupts && this._interruptQueue.length > 0) {
