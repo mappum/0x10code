@@ -178,7 +178,8 @@ app.get('/fork/:id', function(req, res) {
 });
 
 app.get('/forks/:id', function(req, res) {
-	programDb.get({fork: req.params.id, password: ''}, function(err, programs) {
+	var forks = programDb.get({fork: req.params.id, password: ''});
+	paginate(forks, req.query.page, function(err, programs, totalPrograms) {
 		render('list', res, {
 			posts: programs,
 			current: 'forks',

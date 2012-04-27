@@ -1,8 +1,15 @@
 var Program = require('../models/program.js');
 
 exports.get = function(id, callback) {
-	if(typeof id === 'string') Program.findOne({id: id}, callback);
-	else Program.find(id, callback);
+	var scoped;
+	if(typeof id === 'string') scoped = Program.findOne({id: id});
+	else scoped = Program.find(id);
+
+	if(!callback) {
+		return scoped;
+	} else {
+		scoped.run(callback);
+	}
 };
 
 exports.set = function(data, callback) {
