@@ -323,8 +323,8 @@ $(function() {
     			case 0:
     				if(cpu.mem.b) {
     					clockTicks = 0;
-    					if(!clockOn) clockTick();
     					clockOn = true;
+    					if(!clockTicking) clockTick();
     				} else {
     					clockOn = false;
     				}
@@ -335,7 +335,7 @@ $(function() {
     				break;
     			
     			case 2:
-    				if(cpu.mem.b) clockInterrupt = true;
+    				if(cpu.mem.b) clockInterrupt = cpu.mem.b;
     				else clockInterrupt = false;
     				break;
     		}
@@ -344,14 +344,18 @@ $(function() {
     };
     devices.push(clock);
     
+    var clockTicking = false;
     function clockTick() {
-    	if(clockInterrupt) {
-    		cpu.interrupt(2);
+    	clockTicking = true;
+    	
+    	if(typeof clockInterrupt === 'number') {
+    		cpu.interrupt(clockInterrupt);
     	}
     	
     	clockTicks++;
     	
     	if(clockOn) setTimeout(clockTick, 1000 / 60);
+    	else clockTicking = false;
     };
     
     var keyInterrupts = false;
