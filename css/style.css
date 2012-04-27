@@ -95,8 +95,11 @@ body {
 #recent li:nth-child(odd) {
 	background: #fff;
 }
-#recent a {
+#recent li a {
 	color: #444;
+}
+#more-recent {
+	text-align: right;
 }
 #canvas {
 	background: #2b2b2b;

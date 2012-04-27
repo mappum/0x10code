@@ -56,6 +56,16 @@ app.get('/top', function(req, res) {
 	}, {password: ''});
 });
 
+app.get('/recent', function(req, res) {
+	var sorted  = programDb.sort('date', {password: ''})
+	render_paginated(sorted, 'list', res, {
+		current: 'recent',
+		currentPage: req.query.page,
+		moment: moment,
+		title: 'Recent Programs'
+	});
+});
+
 app.get('/random', function(req, res) {
 	programDb.get({password:''}, function(err, posts) {
 		if (posts.length > 0){
