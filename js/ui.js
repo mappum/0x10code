@@ -142,11 +142,10 @@ $(function() {
  	
  	var font = cpu.onSet(cpu.ramSize, 128, function(key, val) {
  		if(screen.address < cpu.ramSize) {
-	 		var displayRam = cpu.mem.slice(screen.address, screen.address + screen.length + 1);
 	    	var value = Math.floor(key / 2);
 	    		
-	    	for(var i = 0; i < displayRam.length; i++) {
-		    	if((displayRam[i] & 0x7f) === value) {
+	    	for(var i = 0; i < screen.length; i++) {
+		    	if((cpu.mem[screen.address + i] & 0x7f) === value) {
 		    		queueChar(i % cols, Math.floor(i / cols));
 		    	}
 	    	}
@@ -154,12 +153,10 @@ $(function() {
  	});
  	
  	var palette = cpu.onSet(cpu.ramSize, 16, function(key, val) {
- 		if(screen.address < cpu.ramSize) {
-	 		var displayRam = cpu.mem.slice(screen.address, screen.address + screen.length + 1);
-	    		
-	    	for(var i = 0; i < displayRam.length; i++) {
-		    	if(((displayRam[i] & 0xf00) >> 8) === key
-		    	|| ((displayRam[i] & 0xf000) >> 12) === key) {
+ 		if(screen.address < cpu.ramSize) {	    		
+	    	for(var i = 0; i < screen.length; i++) {
+		    	if(((cpu.mem[screen.address + i] & 0xf00) >> 8) === key
+		    	|| ((cpu.mem[screen.address + i] & 0xf000) >> 12) === key) {
 		    		queueChar(i % cols, Math.floor(i / cols));
 		    	}
 	    	}
@@ -240,13 +237,13 @@ $(function() {
     }
     
     function queueChar(x, y) {
-    	cellQueue[y][x] = true;
+    	if(x < cols && y < rows) cellQueue[y][x] = true;
     };
     
     function drawScreen() {
     	for(var i = 0; i < rows; i++) {
     		for(var j = 0; j < cols; j++) {
-    			cellQueue[i][j] = true;
+    			queueChar(j, i);
     		}	
     	}
     };
