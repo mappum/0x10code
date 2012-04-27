@@ -47,12 +47,11 @@ function incrementViews(program) {
 }
 
 // scope: Mongoose scope representing the collection to paginate
-// currentPage: The current page, defaults to 1
-// perPage: Items per page, defaults to 25
+// currentPage: The current page
+// itemsPerPage: Items per page
 // callback: function(err, currentItems, totalItems)
-function paginate(scope, currentPage, callback) {
-	var itemsPerPage = 25
-		, offset       = ((currentPage || 1) - 1) * itemsPerPage;
+function paginate(scope, currentPage, itemsPerPage, callback) {
+		var offset = ((currentPage || 1) - 1) * itemsPerPage;
 
 	scope.count(function(err, totalItems) {
 		if(!err) {
@@ -65,16 +64,26 @@ function paginate(scope, currentPage, callback) {
 	});
 }
 
+function render_paginated(scope, type, res, o, callback) {
+	var resultsPerPage = 25
+		, currentPage = o.currentPage || 1;
+
+	paginate(scope, currentPage, resultsPerPage, function(err, posts, totalPosts) {
+		o.posts = posts;
+		o.count = totalPosts;
+		o.resultsPerPage = resultsPerPage;
+		o.currentPage = currentPage;
+		render(type, res, o, callback);
+	});
+}
+
 app.get('/top', function(req, res) {
 	var sorted  = programDb.sort('views', {password: ''})
-		, perPage = 25;
-	paginate(sorted, req.query.page, function(err, posts, totalPosts) {
-		render('list', res, {
-			current: 'top',
-			posts: posts,
-			moment: moment,
-			title: 'Top Programs'
-		});
+	render_paginated(sorted, 'list', res, {
+		current: 'top',
+		currentPage: req.query.page,
+		moment: moment,
+		title: 'Top Programs'
 	});
 });
 
@@ -182,13 +191,11 @@ app.get('/fork/:id', function(req, res) {
 
 app.get('/forks/:id', function(req, res) {
 	var forks = programDb.get({fork: req.params.id, password: ''});
-	paginate(forks, req.query.page, function(err, programs, totalPrograms) {
-		render('list', res, {
-			posts: programs,
-			current: 'forks',
-			moment: moment,
-			title: 'Forks of ' + req.params.id
-		});
+	render_paginated(forks, 'list', res, {
+		current: 'forks',
+		currentPage: req.query.page,
+		moment: moment,
+		title: 'Forks of ' + req.params.id
 	});
 });
 
