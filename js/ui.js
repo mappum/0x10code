@@ -379,7 +379,6 @@ $(function() {
     			case 1:
     				var k = keyboardBuffer.shift() || 0;
     				cpu.mem.c = k;
-    				if(k) console.log(cpu.mem.c);
     				break;
     				
     			case 2:
