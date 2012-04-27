@@ -434,7 +434,8 @@ $(function() {
     
     var driveAdded = false;
     while(devices.length > 0) {
-    	if(Math.random() < (1 / (devices.length + 1)) && !driveAdded) {
+    	if((Math.random() < (1 / (devices.length + 1) || devices.length === 1))
+    	&& !driveAdded) {
     		driveAdded = true;
     		var drive = new DCPU16.HMD2043(cpu);
     		drive.insert(new DCPU16.HMU1440());
