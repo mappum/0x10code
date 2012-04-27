@@ -170,16 +170,10 @@ app.get('/forks/:id', function(req, res) {
 app.post('/', function(req, res) {
 	if(req.body.code.length > 2) {
 		programDb.set(req.body, function(err, program) {
-			if(!err) {
-				res.end('/' + program.id);
-			} else {
-				console.log(err);
-				res.end('', 404);
-			}
+			res.end('/' + program.id);
 		});
 	} else {
-		console.log(err);
-		res.end('', 404);
+		res.end('Node code was included. :(', 404);
 	}
 });
 
