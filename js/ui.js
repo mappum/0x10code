@@ -409,7 +409,7 @@ $(function() {
     		keysDown[key] = true;
     		keyEvent(key);
     		
-    		if(keyMap[e.which]) e.preventDefault();
+    		if(e.which >= 37 && e.which <= 40) e.preventDefault();
     	}
     });
     
