@@ -22,6 +22,7 @@
 		
 		this.lastInterrupt = 0;
 		this.lastError = 0;
+		this.errored = false;
 		
 		this.id = 0x74fa4cae;
     	this.version = 0x07c2;
@@ -36,6 +37,7 @@
     	var error = errors[error];
     	if(!this.nonBlocking) this.cpu.mem.a = error;
     	else this.lastError = error;
+    	this.error = true;
     };
     
     HMD2043.prototype.insert = function(media) {
@@ -66,7 +68,8 @@
     };
     
     HMD2043.prototype.onInterrupt = function(callback) {
-    	this.error('NONE');
+    	this.errored = false;
+    	var call = true;
     	
     	if(!this.busy) {
 	    	switch(this.cpu.mem.a) {
@@ -130,13 +133,15 @@
 	    			
 	    		// READ_SECTORS
 	    		case 0x10:
-	    			accessDisk(true, callback);
-	    			return;
+	    			accessDisk.call(this, true, callback);
+	    			call = false;
+	    			break;
 	    			
 	    		// WRITE_SECTORS
 	    		case 0x11:
-	    			accessDisk(false, callback);
-	    			return;
+	    			accessDisk.call(this, false, callback);
+	    			call = false;
+	    			break;
 	    			
 	    		// QUERY_MEDIA_QUALITY
 	    		case 0xffff:
@@ -146,47 +151,49 @@
 	    	}
     	} else {
 	    	this.error('PENDING');
-	    }
-    	callback();
+	    };
+	    
+	    if(!this.errored) this.error('NONE');
+    	if(call) callback();
     };
     
     function accessDisk(read, callback) {
-    	if(this.media.writeProtected && !read) return;
-    	
     	if(this.media) {
+    		if(this.media.writeProtected && !read) return;
+    		
 	    	var sector = this.cpu.mem.b;
 	    			
 	    	if(this.media.data[sector]) {
-	    	var length = this.cpu.mem.c;
-	    	var buffer = this.cpu.mem.x;
-	    		
-		    var seekTime = this.getSeekTime(track, sector);
-		    var rwTime = this.getRWTime() * length;
-		    			
-		    var data = this.media.data.slice(sector, sector + length + 1);
+		    	var length = this.cpu.mem.c;
+		    	var buffer = this.cpu.mem.x;
 		    		
-		    if(this.nonBlocking) {
-		    	callback();
-		    }
-		    			
-		    setTimeout(function() {
-		    	var offset = 0;
-		    	for(var i = 0; i < data.length; i++) {
-		    		for(var j = 0; j < data[i].length; j++) {
-		    			if(read) this.cpu.mem[buffer + offset] = data[i][j];
-		    			else data[i][j] = this.cpu.mem[buffer + offset];
-		    			offset++;
-		    		}
-		    	}
-		    				
-				this.sector = sector;
-			  	this.busy = false;
-				    		
-		    	if(!this.nonBlocking) callback();
-			}, seekTime + rwTime);
+			    var seekTime = this.getSeekTime(sector);
+			    var rwTime = this.getRWTime() * length;
+			    			
+			    var data = this.media.data.slice(sector, sector + length + 1);
 			    		
-			   this.busy = true;
-		    return;
+			    if(this.nonBlocking) {
+			    	callback();
+			    }
+			    			
+			    setTimeout(function() {
+			    	var offset = 0;
+			    	for(var i = 0; i < data.length; i++) {
+			    		for(var j = 0; j < data[i].length; j++) {
+			    			if(read) this.cpu.mem[buffer + offset] = data[i][j];
+			    			else data[i][j] = this.cpu.mem[buffer + offset];
+			    			offset++;
+			    		}
+			    	}
+			    				
+					this.sector = sector;
+				  	this.busy = false;
+					    		
+			    	if(!this.nonBlocking) callback();
+				}.bind(this), seekTime + rwTime);
+				    		
+				   this.busy = true;
+			    return;
 		    } else {
 		    	this.error('INVALID_SECTOR');
 		    }
