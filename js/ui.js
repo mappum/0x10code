@@ -355,16 +355,16 @@ $(function() {
     var keyInterrupts = false;
     var keyboardBuffer = [], keysDown = [];
     var keyMap = {
-    	8: 10,
-    	13: 11,
-    	45: 12,
-    	46: 13,
-    	38: 80,
-    	40: 81,
-    	37: 82,
-    	39: 83,
-    	16: 90,
-    	17: 91
+    	8: 0x10,
+    	13: 0x11,
+    	45: 0x12,
+    	46: 0x13,
+    	38: 0x80,
+    	40: 0x81,
+    	37: 0x82,
+    	39: 0x83,
+    	16: 0x90,
+    	17: 0x91
     };
     var keyboard = {
     	id: 0x30cf7406,
