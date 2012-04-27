@@ -1,5 +1,4 @@
 (function (root) {
-
 "use strict";
 
 root.formatWord = function(word) {
@@ -121,7 +120,7 @@ var CPU = function CPU() {
 };
 
 CPU.prototype = {
-    nextWord: function() {
+	nextWord: function() {
         var pc = this.get('pc');
 
         var word = this.get(pc);
@@ -748,6 +747,9 @@ CPU.prototype = {
 CPU.FLAG_LITERAL = root.FLAG_LITERAL;
 CPU.REGISTER_NAMES = root.REGISTER_NAMES;
 CPU.OPCODES = root.OPCODES;
+
+CPU.formatWord = root.formatWord;
+CPU.getSigned = root.getSigned;
 
 if (typeof module === 'undefined') {
     (root.DCPU16 = (root.DCPU16 || {})).CPU = CPU;
