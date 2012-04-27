@@ -432,15 +432,17 @@ $(function() {
     	}
     });
     
+    var driveAdded = false;
     while(devices.length > 0) {
-    	var index = Math.floor(Math.random() * (devices.length + 1));
-    	if(index === devices.length) {
+    	if(Math.random() < (1 / (devices.length + 1)) && !driveAdded) {
+    		driveAdded = true;
     		var drive = new DCPU16.HMD2043(cpu);
     		drive.insert(new DCPU16.HMU1440());
-    	} else {
-    		cpu.addDevice(devices[index]);
-    		devices.splice(index, 1);
     	}
+    	
+    	var index = Math.floor(Math.random() * (devices.length));
+    	cpu.addDevice(devices[index]);
+    	devices.splice(index, 1);
     }
     
     function compile() {
