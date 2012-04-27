@@ -21,8 +21,14 @@ exports.set = function(data, callback) {
 	});
 };
 
-exports.sort = function(field, callback, params, fields, limit) {
-	Program
-		.find(params || {}, fields || ['title', 'author', 'description', 'views', 'id', 'date'],
-		{sort:[[field, 'descending']], limit: limit || 25}, callback);
+exports.sort = function(field, params, callback) {
+	var params = params || {}
+		, fields = ['title', 'author', 'description', 'views', 'id', 'date']
+		, scoped = Program.find(params).select(fields).sort(field, 'descending');
+
+	if(!callback) {
+		return scoped;
+	} else {
+		scoped.run(callback);
+	}
 };

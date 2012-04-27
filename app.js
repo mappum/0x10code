@@ -25,7 +25,7 @@ var oneYear = 31557600000;
 app.use(express.static(__dirname + '/', { maxAge: oneYear }));
 
 function render(type, res, o, callback) {
-	programDb.sort('date', function(err, recent) {
+	programDb.sort('date', {password: ''}).limit(25).run(function(err, recent) {
 		recent.moment = moment;
 
 		o.recent = recent;
@@ -35,7 +35,7 @@ function render(type, res, o, callback) {
 		res.render(type, o);
 
 		if (callback) callback(o);
-	}, {password: ''});
+	});
 }
 
 function incrementViews(program) {
@@ -43,15 +43,36 @@ function incrementViews(program) {
 	program.save();
 }
 
+// scope: Mongoose scope representing the collection to paginate
+// currentPage: The current page, defaults to 1
+// perPage: Items per page, defaults to 25
+// callback: function(err, currentItems, totalItems)
+function paginate(scope, currentPage, callback) {
+	var itemsPerPage = 25
+		, offset       = ((currentPage || 1) - 1) * itemsPerPage;
+
+	scope.count(function(err, totalItems) {
+		if(!err) {
+			scope.limit(itemsPerPage).skip(offset).run('find', function(err, currentItems) {
+				callback(err, currentItems, totalItems);
+			});
+		} else {	
+			callback(err);
+		}
+	});
+}
+
 app.get('/top', function(req, res) {
-	programDb.sort('views', function(err, posts) {
+	var sorted  = programDb.sort('views', {password: ''})
+		, perPage = 25;
+	paginate(sorted, req.query.page, function(err, posts, totalPosts) {
 		render('list', res, {
 			current: 'top',
 			posts: posts,
 			moment: moment,
 			title: 'Top Programs'
 		});
-	}, {password: ''});
+	});
 });
 
 app.get('/random', function(req, res) {
