@@ -408,6 +408,8 @@ $(function() {
     		var key = keyMap[e.which] || e.which;
     		keysDown[key] = true;
     		keyEvent(key);
+    		
+    		if(keyMap[e.which]) e.preventDefault();
     	}
     });
     
