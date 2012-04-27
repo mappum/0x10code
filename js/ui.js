@@ -403,32 +403,30 @@ $(function() {
     	}
     };
     
-    $('body').keydown(function(e) {
+    $(document).keydown(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = keyMap[e.keyCode] || e.keyCode;
+    		var key = keyMap[e.which] || e.which;
     		keysDown[key] = true;
     		keyEvent(key);
-    		return true;
     	}
     });
     
-    $('body').keyup(function(e) {
+    $(document).keyup(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = keyMap[e.keyCode] || e.keyCode;
+    		var key = keyMap[e.which] || e.which;
     		keysDown[key] = false;
     		keyEvent(key);
-    		return true;
     	}
     });
     
-    $('body').keypress(function(e) {
+    $(document).keypress(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = keyMap[e.keyCode] || e.keyCode;
+    		var key = keyMap[e.which] || e.which;
     		if(key <= 0x7f) {
     			keyboardBuffer.push(key);
     		}
 	    	keyEvent(key);
-	    	return true;
+	    	e.preventDefault();
     	}
     });
     
