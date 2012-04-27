@@ -23,9 +23,7 @@ app.set('view options', {layout: false});
 app.use(express.bodyParser());
 var oneYear = 31557600000;
 app.use(express.static(__dirname + '/', { maxAge: oneYear }));
-app.locals.use(function(req, res) {
-	res.locals.paginate = require('express-pagination').paginate;
-});
+app.helpers(require('express-pagination'));
 
 function render(type, res, o, callback) {
 	programDb.sort('date', {password: ''}).limit(25).run(function(err, recent) {
