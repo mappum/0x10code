@@ -432,19 +432,13 @@ $(function() {
     	}
     });
     
-    var driveAdded = false;
     while(devices.length > 0) {
-    	if((Math.random() < (1 / (devices.length + 1) || devices.length === 1))
-    	&& !driveAdded) {
-    		driveAdded = true;
-    		var drive = new DCPU16.HMD2043(cpu);
-    		drive.insert(new DCPU16.HMU1440());
-    	}
-    	
     	var index = Math.floor(Math.random() * (devices.length));
     	cpu.addDevice(devices[index]);
     	devices.splice(index, 1);
     }
+    var drive = new DCPU16.HMD2043(cpu);
+    drive.insert(new DCPU16.HMU1440());
     
     function compile() {
         $('#error').hide();
