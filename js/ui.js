@@ -53,7 +53,7 @@ $(function() {
     	val &= 0xf;
     	
     	var color;
-    	if(palette.address < cpu.ramSize) color = cpu.mem[palette.address + val];
+    	if(palette.address < cpu.ramSize) color = cpu.get(palette.address + val);
     	else color = defaultPalette[val];
     	
     	var r = ((color & 0xf00) >> 8) * 17;
@@ -140,12 +140,12 @@ $(function() {
         else blinkCells[row][col] = false;
  	});
  	
- 	var font = cpu.onSet(cpu.ramSize, 128, function(key, val) {
+ 	var font = cpu.onSet(cpu.ramSize, 256, function(key, val) {
  		if(screen.address < cpu.ramSize) {
 	    	var value = Math.floor(key / 2);
 	    		
 	    	for(var i = 0; i < screen.length; i++) {
-		    	if((cpu.mem[screen.address + i] & 0x7f) === value) {
+		    	if((cpu.get(screen.address + i) & 0x7f) === value) {
 		    		queueChar(i % cols, Math.floor(i / cols));
 		    	}
 	    	}
@@ -155,8 +155,8 @@ $(function() {
  	var palette = cpu.onSet(cpu.ramSize, 16, function(key, val) {
  		if(screen.address < cpu.ramSize) {	    		
 	    	for(var i = 0; i < screen.length; i++) {
-		    	if(((cpu.mem[screen.address + i] & 0xf00) >> 8) === key
-		    	|| ((cpu.mem[screen.address + i] & 0xf000) >> 12) === key) {
+		    	if(((cpu.get(screen.address + i) & 0xf00) >> 8) === key
+		    	|| ((cpu.get(screen.address + i) & 0xf000) >> 12) === key) {
 		    		queueChar(i % cols, Math.floor(i / cols));
 		    	}
 	    	}
@@ -213,7 +213,7 @@ $(function() {
  				// MEM_DUMP_FONT
  				case 4:
  					for(var i = 0; i < defaultFont.length; i++) {
- 						cpu.mem[cpu.mem.b + i] = defaultFont[i];
+ 						cpu.set(cpu.mem.b + i, defaultFont[i]);
  					}
  					cpu.cycle += 256;
  					break;
@@ -221,7 +221,7 @@ $(function() {
  				// MEM_DUMP_PALETTE
  				case 5:
  					for(var i = 0; i < defaultPalette.length; i++) {
- 						cpu.mem[cpu.mem.b + i] = defaultPalette[i];
+ 						cpu.set(cpu.mem.b + i, defaultPalette[i]);
  					}
  					cpu.cycle += 16;
  					break;
@@ -243,7 +243,7 @@ $(function() {
     function drawScreen() {
     	for(var i = 0; i < rows; i++) {
     		for(var j = 0; j < cols; j++) {
-    			queueChar(j, i);
+    			queueChar(i, j);
     		}	
     	}
     };
@@ -255,7 +255,7 @@ $(function() {
             bg = getColor((value >> 8) & 0xf),
             blink = ((value >> 7) & 1) === 1;
     	var fontChar;
-    	if(font.address < cpu.ramSize) fontChar = [cpu.mem[font.address+charValue * 2], cpu.mem[font.address+charValue * 2 + 1]];
+    	if(font.address < cpu.ramSize) fontChar = [cpu.get(font.address+charValue * 2), cpu.get(font.address+charValue * 2 + 1)];
     	else fontChar = [defaultFont[charValue * 2], defaultFont[charValue * 2 + 1]];
 		
 		ctx.fillStyle = bg;
@@ -283,22 +283,23 @@ $(function() {
     };
     
     function drawLoop() {
-    	for(var i = 0; i < rows; i++) {
-    		for(var j = 0; j < cols; j++) {
-    			var cell = cellQueue[i][j];
-    			if(cell && screen.address < cpu.ramSize) {
-    				drawChar(cpu.mem[screen.address + (i * cols) + j], j, i);
-    				cellQueue[i][j] = false;
-    			}
-    		}
+    	if(screen.address < cpu.ramSize) {
+	    	for(var i = 0; i < rows; i++) {
+	    		for(var j = 0; j < cols; j++) {
+	    			var cell = cellQueue[i][j];
+	    			if(cell) {
+	    				drawChar(cpu.get(screen.address + (i * cols) + j), j, i);
+	    				cellQueue[i][j] = false;
+	    			}
+	    		}
+	    	}
     	}
-    	if(window.requestAnimationFrame) window.requestAnimationFrame(drawLoop);
-    	else setTimeout(drawLoop, 18);
+    	setTimeout(drawLoop, 1000 / 60);
     };
     drawLoop();
     
     function blinkLoop() {
-    	blinkVisible = !blinkVisible;
+    	if(cpu.running) blinkVisible = !blinkVisible;
     	for(var i = 0; i < rows; i++) {
     		for(var j = 0; j < cols; j++) {
     			if(blinkCells[i][j]) {
