@@ -408,7 +408,6 @@ $(function() {
     		var key = keyMap[e.keyCode];
     		keysDown[key] = true;
     		keyEvent(key);
-    		return true;
     	}
     });
     
