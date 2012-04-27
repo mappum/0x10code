@@ -23,7 +23,6 @@ app.set('view options', {layout: false});
 app.use(express.bodyParser());
 var oneYear = 31557600000;
 app.use(express.static(__dirname + '/', { maxAge: oneYear }));
-app.use(app.router);
 app.use(express.errorHandler());
 
 function render(type, res, o, callback) {
