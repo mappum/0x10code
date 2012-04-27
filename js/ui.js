@@ -405,7 +405,7 @@ $(function() {
     
     $('body').keydown(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = keyMap[e.keyCode] || e.keyCode;
+    		var key = keyMap[e.keyCode];
     		keysDown[key] = true;
     		keyEvent(key);
     		return true;
@@ -414,7 +414,7 @@ $(function() {
     
     $('body').keyup(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = keyMap[e.keyCode] || e.keyCode;
+    		var key = keyMap[e.keyCode];
     		keysDown[key] = false;
     		keyEvent(key);
     		return true;
@@ -423,12 +423,13 @@ $(function() {
     
     $('body').keypress(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = keyMap[e.keyCode] || e.keyCode;
-    		if(key <= 0x7f) {
-    			keyboardBuffer.push(key);
-	    		keyEvent(key);
-	    		return true;
+    		var key = e.keyCode;
+    		if(key < 0x20 || key > 0x7f) {
+    			key = keyMap[e.keyCode];
     		}
+    		keyboardBuffer.push(key);
+	    	keyEvent(key);
+	    	return true;
     	}
     });
     
