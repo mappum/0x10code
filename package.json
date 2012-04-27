@@ -3,6 +3,7 @@
 	"version": "0.0.1",
 	"dependencies": {
 		"express": "*",
+		"express-pagination": "*",
 		"mongoose": "*",
 		"node-markdown": "*",
 		"moment": "*",
