@@ -405,15 +405,16 @@ $(function() {
     
     $('body').keydown(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = keyMap[e.keyCode];
+    		var key = keyMap[e.keyCode] || e.keyCode;
     		keysDown[key] = true;
     		keyEvent(key);
+    		return true;
     	}
     });
     
     $('body').keyup(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = keyMap[e.keyCode];
+    		var key = keyMap[e.keyCode] || e.keyCode;
     		keysDown[key] = false;
     		keyEvent(key);
     		return true;
@@ -422,11 +423,10 @@ $(function() {
     
     $('body').keypress(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = e.keyCode;
-    		if(key < 0x20 || key > 0x7f) {
-    			key = keyMap[e.keyCode];
+    		var key = keyMap[e.keyCode] || e.keyCode;
+    		if(key <= 0x7f) {
+    			keyboardBuffer.push(key);
     		}
-    		keyboardBuffer.push(key);
 	    	keyEvent(key);
 	    	return true;
     	}
