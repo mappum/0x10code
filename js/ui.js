@@ -433,7 +433,7 @@ $(function() {
     });
     
     while(devices.length > 0) {
-    	var index = Math.floor(Math.random() * (devices.length));
+    	var index = Math.floor(Math.random() * devices.length));
     	cpu.addDevice(devices[index]);
     	devices.splice(index, 1);
     }
