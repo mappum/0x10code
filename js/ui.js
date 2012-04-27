@@ -170,7 +170,7 @@ $(function() {
  		id: 0x7349f615,
  		version: 0x1802,
  		manufacturer: 0x1c6c8b36,
- 		onInterrupt: function() {
+ 		onInterrupt: function(callback) {
  			switch(cpu.mem.a) {
  				// MEM_MAP_SCREEN
  				case 0:
@@ -229,6 +229,7 @@ $(function() {
  					cpu.cycle += 16;
  					break;
  			}
+ 			callback();
  		}
  	};
  	devices.push(displayDevice);
@@ -317,7 +318,7 @@ $(function() {
     	id: 0x12d0b402,
     	version: 0,
     	manufacturer: 0,
-    	onInterrupt: function() {
+    	onInterrupt: function(callback) {
     		switch(cpu.mem.a) {
     			case 0:
     				if(cpu.mem.b) {
@@ -338,6 +339,7 @@ $(function() {
     				else clockInterrupt = false;
     				break;
     		}
+    		callback();
     	}
     };
     devices.push(clock);
@@ -370,7 +372,7 @@ $(function() {
     	id: 0x30cf7406,
     	version: 1,
     	manufacturer: 0,
-    	onInterrupt: function() {
+    	onInterrupt: function(callback) {
     		switch(cpu.mem.a) {
     			case 0:
     				keyboardBuffer = [];
@@ -390,6 +392,7 @@ $(function() {
     				else keyInterrupts = false;
     				break;
     		}
+    		callback();
     	}
     };
     devices.push(keyboard);

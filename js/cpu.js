@@ -529,7 +529,8 @@ CPU.prototype = {
 	            
 	            // IAQ
 	            case 0x180:
-			    	
+			    	if(aVal) this._triggerInterrupts = false;
+			    	else this._triggerInterrupts = true;
 	            	break;
 	            
 	            // HWN
