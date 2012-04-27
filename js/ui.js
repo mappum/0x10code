@@ -505,13 +505,14 @@ $(function() {
     }
     //debugLoop();
     
-    cpu.onEnd(function() {
+    cpu.onEnd(end);
+    function end() {
         $('#debug').removeClass('disabled');
         $('#step').removeClass('disabled');
         $('#reset').removeClass('disabled');
         $('#run').removeClass('disabled');
         $('#run span').text('Run');
-    });
+    }
 
     $('#run').click(function() {
         if(!$(this).hasClass('disabled')) {
@@ -538,7 +539,7 @@ $(function() {
 				assembler.addressMap[cpu.pc]], null, 'errorLine');
 		}
 		$('#error').show();
-		cpu.stop();
+		end();
     }
 
     $('#stop').click(function() {
