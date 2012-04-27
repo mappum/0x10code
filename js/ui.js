@@ -521,10 +521,25 @@ $(function() {
                 $('#run').addClass('disabled');
                 $('#run span').text('Running...');
                 $('#reset').addClass('disabled');
-                cpu.run();
+                try {
+                	cpu.run();
+	            } catch(e) {
+		           runtimeError(e);
+		        }
             }
         }
     });
+    
+    function runtimeError(e) {
+    	$('#error strong').text('Runtime error: ');
+		$('#error span').text(e.message);
+		if(assembler.instructionMap[assembler.instruction]) {
+			errorLine = editor.setLineClass(assembler.instructionMap[
+				assembler.addressMap[cpu.pc]], null, 'errorLine');
+		}
+		$('#error').show();
+		cpu.stop();
+    }
 
     $('#stop').click(function() {
         if(!$(this).hasClass('disabled'))
@@ -554,7 +569,11 @@ $(function() {
 
     $('#step').click(function() {
         if(!$(this).hasClass('disabled')) {
-            cpu.step();
+            try {
+            	cpu.step();
+	        } catch(e) {
+		    	runtimeError(e);
+		    }
             stepped = true;
             drawDebug();
         }
