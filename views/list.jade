@@ -11,3 +11,4 @@ append content
           span
             strong Views: 
             span #{posts[i].views}
+  != paginate(count, resultsPerPage, currentPage)
