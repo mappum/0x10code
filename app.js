@@ -21,10 +21,11 @@ app.set('views', './views');
 app.set('view engine', 'jade');
 app.set('view options', {layout: false});
 app.use(express.bodyParser());
-app.use(express.static(__dirname + '/', { maxAge: 10 * 60 * 1000 }));
+app.use(express['static'](__dirname + '/', { maxAge: 10 * 60 * 1000 }));
+app.helpers(require('express-pagination'));
 
 function render(type, res, o, callback) {
-	programDb.sort('date', function(err, recent) {
+	programDb.sort('date', {password: ''}).limit(25).run(function(err, recent) {
 		recent.moment = moment;
 
 		o.recent = recent;
@@ -34,7 +35,7 @@ function render(type, res, o, callback) {
 		res.render(type, o);
 
 		if (callback) callback(o);
-	}, {password: ''});
+	});
 }
 
 function incrementViews(program) {
@@ -42,15 +43,45 @@ function incrementViews(program) {
 	program.save();
 }
 
+// scope: Mongoose scope representing the collection to paginate
+// currentPage: The current page
+// itemsPerPage: Items per page
+// callback: function(err, currentItems, totalItems)
+function paginate(scope, currentPage, itemsPerPage, callback) {
+		var offset = ((currentPage || 1) - 1) * itemsPerPage;
+
+	scope.count(function(err, totalItems) {
+		if(!err) {
+			scope.limit(itemsPerPage).skip(offset).run('find', function(err, currentItems) {
+				callback(err, currentItems, totalItems);
+			});
+		} else {	
+			callback(err);
+		}
+	});
+}
+
+function renderPaginated(scope, type, res, o, callback) {
+	var resultsPerPage = 25
+		, currentPage = o.currentPage || 1;
+
+	paginate(scope, currentPage, resultsPerPage, function(err, posts, totalPosts) {
+		o.posts = posts;
+		o.count = totalPosts;
+		o.resultsPerPage = resultsPerPage;
+		o.currentPage = currentPage;
+		render(type, res, o, callback);
+	});
+}
+
 app.get('/top', function(req, res) {
-	programDb.sort('views', function(err, posts) {
-		render('list', res, {
-			current: 'top',
-			posts: posts,
-			moment: moment,
-			title: 'Top Programs'
-		});
-	}, {password: ''});
+	var sorted  = programDb.sort('views', {password: ''});
+	renderPaginated(sorted, 'list', res, {
+		current: 'top',
+		currentPage: req.query.page,
+		moment: moment,
+		title: 'Top Programs'
+	});
 });
 
 app.get('/random', function(req, res) {
@@ -156,13 +187,12 @@ app.get('/fork/:id', function(req, res) {
 });
 
 app.get('/forks/:id', function(req, res) {
-	programDb.get({fork: req.params.id, password: ''}, function(err, programs) {
-		render('list', res, {
-			posts: programs,
-			current: 'forks',
-			moment: moment,
-			title: 'Forks of ' + req.params.id
-		});
+	var forks = programDb.get({fork: req.params.id, password: ''});
+	renderPaginated(forks, 'list', res, {
+		current: 'forks',
+		currentPage: req.query.page,
+		moment: moment,
+		title: 'Forks of ' + req.params.id
 	});
 });
 

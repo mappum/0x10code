@@ -2,7 +2,8 @@
 	"name": "0x10code",
 	"version": "0.0.1",
 	"dependencies": {
-		"express": "*",
+		"express": "2.5.9",
+		"express-pagination": "*",
 		"mongoose": "*",
 		"node-markdown": "*",
 		"moment": "*",
