@@ -128,11 +128,6 @@ $(function() {
  		
  	var screen = cpu.onSet(cpu.ramSize, cols * rows, function(key, val) {
  		var row = Math.floor(key / cols), col = key % cols;
-        var character = String.fromCharCode(val & 0x7f)
-         	.replace(' ', ' ')
-           	.replace('\n', ' ')
-           	.replace('\r', ' ')
-           	.replace('\0', ' ');
            
         queueChar(col, row);
            
@@ -243,7 +238,7 @@ $(function() {
     function drawScreen() {
     	for(var i = 0; i < rows; i++) {
     		for(var j = 0; j < cols; j++) {
-    			queueChar(i, j);
+    			queueChar(j, i);
     		}	
     	}
     };
