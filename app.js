@@ -202,7 +202,7 @@ app.post('/', function(req, res) {
 			res.end('/' + program.id);
 		});
 	} else {
-		res.end('Node code was included. :(', 404);
+		res.end('No code was included. :(', 404);
 	}
 });
 

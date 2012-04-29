@@ -65,11 +65,11 @@ var opcodes = [
     {id: 'JSR', code: 0x20, cost: 3, args: 1},
     {id: 'BRK', code: 0x40, cost: 0, args: 0},
     
-    {id: 'HCF', code: 0xe0, cost: 9, args: 0},
+    {id: 'HCF', code: 0xe0, cost: 9, args: 1},
     {id: 'INT', code: 0x100, cost: 4, args: 1},
     {id: 'IAG', code: 0x120, cost: 1, args: 1},
     {id: 'IAS', code: 0x140, cost: 1, args: 1},
-    {id: 'RFI', code: 0x160, cost: 3, args: 0},
+    {id: 'RFI', code: 0x160, cost: 3, args: 1},
     {id: 'IAQ', code: 0x180, cost: 2, args: 1},
     
     {id: 'HWN', code: 0x200, cost: 2, args: 1},
@@ -104,7 +104,7 @@ var CPU = function CPU() {
     // Execution parameters
     this.throttled = true; //whether or not to control speed
     this.speedWindow = 4; //how much time to use for the speed average (seconds)
-    this.speed = 140000; //speed in hz
+    this.speed = 100000; //speed in hz
     this.loopBatch = 3000; //the number of loops to execute at a time in run
 
 	this.paused = false;
