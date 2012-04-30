@@ -363,6 +363,12 @@ $(function() {
     	16: 0x90,
     	17: 0x91
     };
+    var pressListeners = [
+    	0x10,
+    	0x11,
+    	0x12,
+    	0x13
+    ];
     var keyboard = {
     	id: 0x30cf7406,
     	version: 1,
@@ -379,7 +385,7 @@ $(function() {
     				break;
     				
     			case 2:
-    				cpu.mem.c = (keysDown[cpu.mem.b] * 1);
+    				cpu.mem.c = (keysDown[cpu.mem.b] !== 0);
     				break;
     				
     			case 3:
@@ -399,7 +405,9 @@ $(function() {
     $(document).keydown(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
     		var key = keyMap[e.which] || e.which;
-    		keysDown[key] = true;
+    		keysDown[key] = Date.now();
+    		
+    		if(pressListeners.indexOf(key) !== -1) keyboardBuffer.push(key);
     		keyEvent(key);
     		
     		if(e.which >= 37 && e.which <= 40 || e.which === 8) e.preventDefault();
@@ -409,7 +417,8 @@ $(function() {
     $(document).keyup(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
     		var key = keyMap[e.which] || e.which;
-    		keysDown[key] = false;
+    		keysDown[key] = 0;
+    		
     		keyEvent(key);
     	}
     });
@@ -424,6 +433,17 @@ $(function() {
 	    	e.preventDefault();
     	}
     });
+    
+    function pressLoop() {
+    	if(cpu.running) {
+	    	var now = Date.now();
+	    	for(var i = 0; i < pressListeners.length; i++) {
+	    		if(now - keysDown[pressListeners[i]] > 500) keyboardBuffer.push(key);
+	    	}
+    	}
+    	setTimeout(pressLoop, 100);
+    };
+    pressLoop();
     
     while(devices.length > 0) {
     	var index = Math.floor(Math.random() * devices.length);
