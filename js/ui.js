@@ -469,9 +469,7 @@ $(function() {
         } catch(e) {
             $('#error strong').text('Assembler error: ');
             $('#error span').text(e.message);
-            if(assembler.instructionMap[assembler.instruction]) {
-            	errorLine = editor.setLineClass(assembler.instructionMap[assembler.instruction] - 1, null, 'errorLine');
-            }
+            errorLine = editor.setLineClass(assembler.instructionMap[assembler.instruction] - 1, null, 'errorLine');
             $('#error').show();
             return false;
         }
@@ -546,10 +544,8 @@ $(function() {
     function runtimeError(e) {
     	$('#error strong').text('Runtime error: ');
 		$('#error span').text(e.message);
-		if(assembler.instructionMap[assembler.instruction]) {
-			errorLine = editor.setLineClass(assembler.instructionMap[
-				assembler.addressMap[cpu.pc]], null, 'errorLine');
-		}
+		errorLine = editor.setLineClass(assembler.instructionMap[
+			assembler.addressMap[cpu.mem.pc] - 1], null, 'errorLine');
 		$('#error').show();
 		end();
     }
