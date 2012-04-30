@@ -306,20 +306,20 @@ $(function() {
     };
     blinkLoop();
     
-    var clockOn = false, clockInterrupt = false, clockTicks = 0;
+    var tickRate = 0, clockInterrupt = 0, clockTicks = 0;
     var clock = {
     	id: 0x12d0b402,
     	version: 0,
     	manufacturer: 0,
-    	onInterrupt: function(callback) {
+    	onInterrupt: function() {
     		switch(cpu.mem.a) {
     			case 0:
     				if(cpu.mem.b) {
     					clockTicks = 0;
-    					clockOn = true;
+    					tickRate = cpu.mem.b;
     					if(!clockTicking) clockTick();
     				} else {
-    					clockOn = false;
+    					tickRate = 0;
     				}
     				break;
     				
@@ -328,26 +328,25 @@ $(function() {
     				break;
     			
     			case 2:
-    				if(cpu.mem.b) clockInterrupt = cpu.mem.b;
-    				else clockInterrupt = false;
+    				clockInterrupt = cpu.mem.b;
     				break;
     		}
-    		callback();
     	}
     };
     devices.push(clock);
     
-    var clockTicking = false;
+    var clockTicking = false, tickRate = 1;
     function clockTick() {
     	clockTicking = true;
     	
-    	if(typeof clockInterrupt === 'number') {
+    	if(clockInterrupt) {
     		cpu.interrupt(clockInterrupt);
+    		console.log(cpu._interruptQueue.length);
     	}
     	
     	clockTicks++;
     	
-    	if(clockOn) setTimeout(clockTick, 1000 / 60);
+    	if(tickRate) setTimeout(clockTick, 1000 / (60 / tickRate));
     	else clockTicking = false;
     };
     
