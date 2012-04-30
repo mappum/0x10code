@@ -402,7 +402,7 @@ $(function() {
     		keysDown[key] = true;
     		keyEvent(key);
     		
-    		if(e.which >= 37 && e.which <= 40) e.preventDefault();
+    		if(e.which >= 37 && e.which <= 40 || e.which === 8) e.preventDefault();
     	}
     });
     
