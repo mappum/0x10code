@@ -341,7 +341,6 @@ $(function() {
     	
     	if(clockInterrupt) {
     		cpu.interrupt(clockInterrupt);
-    		console.log(cpu._interruptQueue.length);
     	}
     	
     	clockTicks++;
