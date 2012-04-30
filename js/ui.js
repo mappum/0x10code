@@ -387,14 +387,13 @@ $(function() {
     				else keyInterrupts = false;
     				break;
     		}
-    		callback();
     	}
     };
     devices.push(keyboard);
     
     function keyEvent(key) {
     	if(keyInterrupts) {
-    		cpu.interrupt();
+    		cpu.interrupt(key);
     	}
     };
     
