@@ -361,8 +361,7 @@ $(function() {
     	37: 0x82,
     	39: 0x83,
     	16: 0x90,
-    	17: 0x91,
-    	190: 46
+    	17: 0x91
     };
     var keyboard = {
     	id: 0x30cf7406,
@@ -417,7 +416,7 @@ $(function() {
     
     $(document).keypress(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = keyMap[e.which] || e.which;
+    		var key = e.which;
     		if(key <= 0x7f) {
     			keyboardBuffer.push(key);
     		}
