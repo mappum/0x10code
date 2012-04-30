@@ -349,7 +349,7 @@ $(function() {
     	else clockTicking = false;
     };
     
-    var keyInterrupts = false;
+    var keyInterrupts = 0;
     var keyboardBuffer = [], keysDown = [];
     var keyMap = {
     	8: 0x10,
@@ -383,8 +383,7 @@ $(function() {
     				break;
     				
     			case 3:
-    				if(cpu.mem.b) keyInterrupts = true;
-    				else keyInterrupts = false;
+    				keyInterrupts = cpu.mem.b;
     				break;
     		}
     	}
@@ -393,7 +392,7 @@ $(function() {
     
     function keyEvent(key) {
     	if(keyInterrupts) {
-    		cpu.interrupt(key);
+    		cpu.interrupt(keyInterrupts);
     	}
     };
     
