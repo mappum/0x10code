@@ -438,7 +438,7 @@ $(function() {
     	if(cpu.running) {
 	    	var now = Date.now();
 	    	for(var i = 0; i < pressListeners.length; i++) {
-	    		if(now - keysDown[pressListeners[i]] > 500) keyboardBuffer.push(pressListeners[i]);
+	    		if(keysDown[pressListeners[i]] && now - keysDown[pressListeners[i]] > 500) keyboardBuffer.push(pressListeners[i]);
 	    	}
     	}
     	setTimeout(pressLoop, 100);
