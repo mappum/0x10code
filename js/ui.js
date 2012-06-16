@@ -71,7 +71,7 @@ $(function() {
     	
     	0xa00,
     	0xa0a,
-    	0xaa0,
+    	0xa50,
     	0xaaa,
     	
     	0x555,
