@@ -71,7 +71,7 @@ $(function() {
     	
     	0xa00,
     	0xa0a,
-    	0xa50,
+    	0xaa0,
     	0xaaa,
     	
     	0x555,
@@ -381,11 +381,11 @@ $(function() {
     			
     			case 1:
     				var k = keyboardBuffer.shift() || 0;
-    				cpu.mem.c = k;
+    				cpu.set('c',  k);
     				break;
     				
     			case 2:
-    				cpu.mem.c = (keysDown[cpu.mem.b] !== 0);
+    				cpu.set('c', Number(keysDown[cpu.mem.b] !== 0));
     				break;
     				
     			case 3:
@@ -425,10 +425,8 @@ $(function() {
     
     $(document).keypress(function(e) {
     	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = e.which;
-    		if(key <= 0x7f) {
-    			keyboardBuffer.push(key);
-    		}
+    		var key = keyMap[e.which] || e.which;
+    		keyboardBuffer.push(key);
 	    	keyEvent(key);
 	    	e.preventDefault();
     	}
