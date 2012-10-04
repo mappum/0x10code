@@ -450,13 +450,13 @@ $(function() {
 
     var sped = new SPED3(document.getElementById('sped3'));
     var onDraw = function() {
-        if(!lemClicked && $('#canvas').css('display') === 'none') {
+        if(!spedClicked && $('#sped3').css('display') === 'none') {
             $('#sped3').css('display', 'block');
             $('#show-sped').addClass('active');
         }
         sped.offDraw(onDraw);
     };
-    sped.onDraw(onDraw);    
+    sped.onDraw(onDraw);
     devices.push(sped);
     
     while(devices.length > 0) {
