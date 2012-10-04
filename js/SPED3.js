@@ -23,14 +23,14 @@
         var width = parseInt(container.style.width, 10);
         var height = parseInt(container.style.height, 10);
 
-        this.cameraTarget = new THREE.Vector3(16, 16, 16);
-        this.cameraDistance = 48;
+        this.cameraTarget = new THREE.Vector3(128, 128, 128);
+        this.cameraDistance = 380;
 
-        this.camera = new THREE.PerspectiveCamera(65, width / height, 0.1, 100);
+        this.camera = new THREE.PerspectiveCamera(70, width / height, 1, 1000);
         this.camera.position.x = this.cameraTarget.x;
         this.camera.position.y = this.cameraTarget.y;
         this.camera.position.z = this.cameraTarget.z - this.cameraDistance;
-        this.camera.lookAt(new THREE.Vector3(16, 16, 16));
+        this.camera.lookAt(this.cameraTarget);
 
         this.scene = new THREE.Scene();
 
@@ -81,24 +81,33 @@
             context.fill();
         };
         var materials = [
-            new THREE.ParticleCanvasMaterial({color: 0x1FCC2A, program: renderVertex}),
-            new THREE.ParticleCanvasMaterial({color: 0xCC1F1F, program: renderVertex})
+            new THREE.ParticleCanvasMaterial({color: 0, program: renderVertex}),
+            new THREE.ParticleCanvasMaterial({color: 0x117A18, program: renderVertex}),
+            new THREE.ParticleCanvasMaterial({color: 0xA11313, program: renderVertex}),
+            new THREE.ParticleCanvasMaterial({color: 0x15158A, program: renderVertex}),
+
+            new THREE.ParticleCanvasMaterial({color: 0x888, program: renderVertex}),
+            new THREE.ParticleCanvasMaterial({color: 0x0EF01D, program: renderVertex}),
+            new THREE.ParticleCanvasMaterial({color: 0xA11313, program: renderVertex}),
+            new THREE.ParticleCanvasMaterial({color: 0x3B3BFF, program: renderVertex})
         ];
 
         var memory = this.cpu.mem.slice(this.memoryListener.address,
             this.memoryListener.address + this.memoryListener.length);
-        for(i = 0; i < memory.length; i++) {
-            var word = memory[i];
-            var x = word & 0x1f;
-            var y = (word >> 5) & 0x1f;
-            var z = (word >> 10) & 0x1f;
-            var c = (word >> 15) & 0x1;
+        for(i = 0; i < memory.length; i += 2) {
+            var word1 = memory[i];
+            var word2 = memory[i+1];
 
-            var vertex = new THREE.Particle(materials[c]);
+            var x = word1 & 0xff;
+            var y = (word1 >> 8) & 0xff;
+            var z = word2 & 0xff;
+            var color = (word2 >> 8) & 0x7;
+
+            var vertex = new THREE.Particle(materials[color]);
             vertex.position.x = x;
             vertex.position.y = y;
             vertex.position.z = z;
-            vertex.scale.x = vertex.scale.y = vertex.scale.z = 0.5;
+            vertex.scale.x = vertex.scale.y = vertex.scale.z = 4;
             vertex.dynamic = true;
             this.scene.add(vertex);
 
@@ -109,7 +118,7 @@
         line.dynamic = true;
         this.scene.add(line);
 
-        for(var i = 0; i < this._drawListeners.length; i++) {
+        for(i = 0; i < this._drawListeners.length; i++) {
             this._drawListeners[i]();
         }
     };
@@ -126,7 +135,7 @@
     
     SPED3.prototype.map = function(memoryOffset, memoryLength) {
         this.memoryListener.address = memoryOffset;
-        this.memoryListener.length = memoryLength;
+        this.memoryListener.length = memoryLength * 2;
         this.update();
     };
     
