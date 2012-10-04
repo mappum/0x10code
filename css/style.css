@@ -98,8 +98,11 @@ body {
 #recent a {
 	color: #444;
 }
-#canvas {
+canvas {
 	background: #2b2b2b;
+	display: block;
+	margin-top: 6px;
+	margin-bottom: 6px;
 }
 #rightFix {
 	
@@ -141,5 +144,8 @@ pre.console {
 	background: #333;
 	color: #fff;
 	font-size: 20px;
-	text-align: center;
+}
+
+pre.console h3 {
+	color: #fff;
 }

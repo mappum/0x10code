@@ -30,8 +30,8 @@ $(function() {
         },
         onCursorActivity: function() {
             if(!editor.getOption('readOnly')) {
-	            editor.setLineClass(hlLine, null, null);
-	            hlLine = editor.setLineClass(editor.getCursor().line, null, "activeLine");
+                editor.setLineClass(hlLine, null, null);
+                hlLine = editor.setLineClass(editor.getCursor().line, null, "activeLine");
             }
         }
     });
@@ -45,411 +45,415 @@ $(function() {
     var devices = [];
     
     function clearScreen() {
-    	ctx.fillStyle = getColor(0);
+        ctx.fillStyle = getColor(0);
         ctx.fillRect(0, 0, 500, 500);
     };
     
     function getColor(val) {
-    	val &= 0xf;
-    	
-    	var color;
-    	if(palette.address < cpu.ramSize) color = cpu.get(palette.address + val);
-    	else color = defaultPalette[val];
-    	
-    	var r = ((color & 0xf00) >> 8) * 17;
-    	var g = ((color & 0xf0) >> 4) * 17;
-    	var b = (color & 0xf) * 17;
-    	
-    	return 'rgb(' + r +',' + g + ',' + b + ')';
+        val &= 0xf;
+        
+        var color;
+        if(palette.address < cpu.ramSize) color = cpu.get(palette.address + val);
+        else color = defaultPalette[val];
+        
+        var r = ((color & 0xf00) >> 8) * 17;
+        var g = ((color & 0xf0) >> 4) * 17;
+        var b = (color & 0xf) * 17;
+        
+        return 'rgb(' + r +',' + g + ',' + b + ')';
     };
     
     var defaultPalette = [
-    	0x000,
-    	0x00a,
-    	0x0a0,
-    	0x0aa,
-    	
-    	0xa00,
-    	0xa0a,
-    	0xa50,
-    	0xaaa,
-    	
-    	0x555,
-    	0x55f,
-    	0x5f5,
-    	0x5ff,
-    	
-    	0xf55,
-    	0xf5f,
-    	0xff5,
-    	0xfff
+        0x000,
+        0x00a,
+        0x0a0,
+        0x0aa,
+        
+        0xa00,
+        0xa0a,
+        0xa50,
+        0xaaa,
+        
+        0x555,
+        0x55f,
+        0x5f5,
+        0x5ff,
+        
+        0xf55,
+        0xf5f,
+        0xff5,
+        0xfff
     ];
     
     var defaultFont = [];
     var charWidth = 4, charHeight = 8;
     var charScale = 3;
     (function() {
-	    var fontCanvas = document.getElementById('fontCanvas'); 
-	    var fontCtx = fontCanvas.getContext('2d');
-	    var fontImage = new Image();
-	    fontImage.onload = function() {
-	    	fontCtx.drawImage(fontImage, 0, 0);
-	    	
-	    	for(var i = 0; i < charWidth; i++) {
-	    		for(var j = 0; j < 32; j++) {
-	    			var fontData = fontCtx.getImageData(j * charWidth, i * charHeight, charWidth, charHeight),
-	    				charId = (i * 32) + j;
-	    				
-	    			for(var k = 0; k < charWidth; k++) {
-	    				var col = 0;
-	    				for(var l = 0; l < charHeight; l++) {
-	    					var pixelId = l * charWidth + k;
-	    					col |= (((fontData.data[pixelId * charWidth + 1] > 128) * 1) << l);
-	    				}
-	    				defaultFont[(charId * 2) + Math.floor(k/2)] |= (col << (((k+1)%2) * charHeight));
-	    			}
-	    		}
-	    	}
-	    };
-	    fontImage.src = '/img/font.png';
+        var fontCanvas = document.getElementById('fontCanvas'); 
+        var fontCtx = fontCanvas.getContext('2d');
+        var fontImage = new Image();
+        fontImage.onload = function() {
+            fontCtx.drawImage(fontImage, 0, 0);
+            
+            for(var i = 0; i < charWidth; i++) {
+                for(var j = 0; j < 32; j++) {
+                    var fontData = fontCtx.getImageData(j * charWidth, i * charHeight, charWidth, charHeight),
+                        charId = (i * 32) + j;
+                        
+                    for(var k = 0; k < charWidth; k++) {
+                        var col = 0;
+                        for(var l = 0; l < charHeight; l++) {
+                            var pixelId = l * charWidth + k;
+                            col |= (((fontData.data[pixelId * charWidth + 1] > 128) * 1) << l);
+                        }
+                        defaultFont[(charId * 2) + Math.floor(k/2)] |= (col << (((k+1)%2) * charHeight));
+                    }
+                }
+            }
+        };
+        fontImage.src = '/img/font.png';
     })();
     
-    var canvas = document.getElementById('canvas');     
+    var canvas = document.getElementById('canvas');
     var blinkCells = [], cellQueue = [];
     var blinkInterval = 700;
- 	var ctx = canvas.getContext('2d');
- 	
- 	var cols = 32, rows = 12;
- 	var borderSize = 6;
- 	
- 	$('canvas')
- 		.attr('width', (charWidth * cols + borderSize * 2) * charScale)
- 		.attr('height', (charHeight * rows + borderSize * 2) * charScale);
- 		
- 	var screen = cpu.onSet(cpu.ramSize, cols * rows, function(key, val) {
- 		var row = Math.floor(key / cols), col = key % cols;
+    var ctx = canvas.getContext('2d');
+    
+    var cols = 32, rows = 12;
+    var borderSize = 6;
+    
+    $('canvas')
+        .attr('width', (charWidth * cols + borderSize * 2) * charScale)
+        .attr('height', (charHeight * rows + borderSize * 2) * charScale);
+        
+    var screen = cpu.onSet(cpu.ramSize, cols * rows, function(key, val) {
+        var row = Math.floor(key / cols), col = key % cols;
            
         queueChar(col, row);
            
         if(((val >> 7) & 1) === 1) blinkCells[row][col] = true;
         else blinkCells[row][col] = false;
- 	});
- 	
- 	var font = cpu.onSet(cpu.ramSize, 256, function(key, val) {
- 		if(screen.address < cpu.ramSize) {
-	    	var value = Math.floor(key / 2);
-	    		
-	    	for(var i = 0; i < screen.length; i++) {
-		    	if((cpu.get(screen.address + i) & 0x7f) === value) {
-		    		queueChar(i % cols, Math.floor(i / cols));
-		    	}
-	    	}
-    	}
- 	});
- 	
- 	var palette = cpu.onSet(cpu.ramSize, 16, function(key, val) {
- 		if(screen.address < cpu.ramSize) {	    		
-	    	for(var i = 0; i < screen.length; i++) {
-		    	if(((cpu.get(screen.address + i) & 0xf00) >> 8) === key
-		    	|| ((cpu.get(screen.address + i) & 0xf000) >> 12) === key) {
-		    		queueChar(i % cols, Math.floor(i / cols));
-		    	}
-	    	}
-    	}
- 	});
+    });
+    
+    var font = cpu.onSet(cpu.ramSize, 256, function(key, val) {
+        if(screen.address < cpu.ramSize) {
+            var value = Math.floor(key / 2);
+                
+            for(var i = 0; i < screen.length; i++) {
+                if((cpu.get(screen.address + i) & 0x7f) === value) {
+                    queueChar(i % cols, Math.floor(i / cols));
+                }
+            }
+        }
+    });
+    
+    var palette = cpu.onSet(cpu.ramSize, 16, function(key, val) {
+        if(screen.address < cpu.ramSize) {              
+            for(var i = 0; i < screen.length; i++) {
+                if(((cpu.get(screen.address + i) & 0xf00) >> 8) === key
+                || ((cpu.get(screen.address + i) & 0xf000) >> 12) === key) {
+                    queueChar(i % cols, Math.floor(i / cols));
+                }
+            }
+        }
+    });
  
- 	var displayDevice = {
- 		id: 0x7349f615,
- 		version: 0x1802,
- 		manufacturer: 0x1c6c8b36,
- 		onInterrupt: function(callback) {
- 			switch(cpu.mem.a) {
- 				// MEM_MAP_SCREEN
- 				case 0:
- 					if(cpu.mem.b > 0) {
- 						screen.address = cpu.mem.b;
- 					} else {
- 						screen.address = cpu.ramSize;
- 					}
- 					drawScreen();
- 					break;
- 					
- 				// MEM_MAP_FONT
- 				case 1:
- 					if(cpu.mem.b > 0) {
- 						font.address = cpu.mem.b;
- 					} else {
- 						font.address = cpu.ramSize;
- 					}
- 					drawScreen();
- 					break;
- 					
- 				// MEM_MAP_PALETTE
- 				case 2:
- 					if(cpu.mem.b > 0) {
- 						palette.address = cpu.mem.b;
- 					} else {
- 						palette.address = cpu.ramSize;
- 					}
- 					drawScreen();
- 					break;
- 					
- 				// SET_BORDER_COLOR
- 				case 3:
- 					var width = (charWidth * cols + borderSize * 2) * charScale,
-		    			height = (charHeight * rows + borderSize * 2) * charScale;
-		    		ctx.fillStyle = getColor(cpu.mem.b & 0xf);
-		    		ctx.fillRect(0, 0, width, borderSize * charScale);
-		    		ctx.fillRect(0, height - borderSize * charScale, width, borderSize * charScale);
-		    		ctx.fillRect(0, 0, borderSize * charScale, height);
-		    		ctx.fillRect(width - borderSize * charScale, 0, borderSize * charScale, height);
- 					break;
- 				
- 				// MEM_DUMP_FONT
- 				case 4:
- 					for(var i = 0; i < defaultFont.length; i++) {
- 						cpu.set(cpu.mem.b + i, defaultFont[i]);
- 					}
- 					cpu.cycle += 256;
- 					break;
- 					
- 				// MEM_DUMP_PALETTE
- 				case 5:
- 					for(var i = 0; i < defaultPalette.length; i++) {
- 						cpu.set(cpu.mem.b + i, defaultPalette[i]);
- 					}
- 					cpu.cycle += 16;
- 					break;
- 			}
- 			callback();
- 		}
- 	};
- 	devices.push(displayDevice);
+    var displayDevice = {
+        id: 0x7349f615,
+        version: 0x1802,
+        manufacturer: 0x1c6c8b36,
+        onInterrupt: function(callback) {
+            switch(cpu.mem.a) {
+                // MEM_MAP_SCREEN
+                case 0:
+                    if(cpu.mem.b > 0) {
+                        screen.address = cpu.mem.b;
+                    } else {
+                        screen.address = cpu.ramSize;
+                    }
+                    drawScreen();
+                    break;
+                    
+                // MEM_MAP_FONT
+                case 1:
+                    if(cpu.mem.b > 0) {
+                        font.address = cpu.mem.b;
+                    } else {
+                        font.address = cpu.ramSize;
+                    }
+                    drawScreen();
+                    break;
+                    
+                // MEM_MAP_PALETTE
+                case 2:
+                    if(cpu.mem.b > 0) {
+                        palette.address = cpu.mem.b;
+                    } else {
+                        palette.address = cpu.ramSize;
+                    }
+                    drawScreen();
+                    break;
+                    
+                // SET_BORDER_COLOR
+                case 3:
+                    var width = (charWidth * cols + borderSize * 2) * charScale,
+                        height = (charHeight * rows + borderSize * 2) * charScale;
+                    ctx.fillStyle = getColor(cpu.mem.b & 0xf);
+                    ctx.fillRect(0, 0, width, borderSize * charScale);
+                    ctx.fillRect(0, height - borderSize * charScale, width, borderSize * charScale);
+                    ctx.fillRect(0, 0, borderSize * charScale, height);
+                    ctx.fillRect(width - borderSize * charScale, 0, borderSize * charScale, height);
+                    break;
+                
+                // MEM_DUMP_FONT
+                case 4:
+                    for(var i = 0; i < defaultFont.length; i++) {
+                        cpu.set(cpu.mem.b + i, defaultFont[i]);
+                    }
+                    cpu.cycle += 256;
+                    break;
+                    
+                // MEM_DUMP_PALETTE
+                case 5:
+                    for(var i = 0; i < defaultPalette.length; i++) {
+                        cpu.set(cpu.mem.b + i, defaultPalette[i]);
+                    }
+                    cpu.cycle += 16;
+                    break;
+            }
+            callback();
+        }
+    };
+    devices.push(displayDevice);
     
     for(var i = 0; i < rows; i++) {
-    	cellQueue.push([]);
-    	blinkCells.push([]);
+        cellQueue.push([]);
+        blinkCells.push([]);
     }
     
     function queueChar(x, y) {
-    	if(x < cols && y < rows) cellQueue[y][x] = true;
-    };
+        if(x < cols && y < rows) cellQueue[y][x] = true;
+    }
     
     function drawScreen() {
-    	for(var i = 0; i < rows; i++) {
-    		for(var j = 0; j < cols; j++) {
-    			queueChar(j, i);
-    		}	
-    	}
-    };
+        for(var i = 0; i < rows; i++) {
+            for(var j = 0; j < cols; j++) {
+                queueChar(j, i);
+            }   
+        }
+    }
     
     var blinkVisible = false;
     function drawChar(value, x, y) {
-    	var charValue = value & 0x7f,
-    		fg = getColor((value >> 12) & 0xf),
+        var charValue = value & 0x7f,
+            fg = getColor((value >> 12) & 0xf),
             bg = getColor((value >> 8) & 0xf),
             blink = ((value >> 7) & 1) === 1;
-    	var fontChar;
-    	if(font.address < cpu.ramSize) fontChar = [cpu.get(font.address+charValue * 2), cpu.get(font.address+charValue * 2 + 1)];
-    	else fontChar = [defaultFont[charValue * 2], defaultFont[charValue * 2 + 1]];
-		
-		ctx.fillStyle = bg;
-		ctx.fillRect((x * charWidth + borderSize) * charScale,
-			(y * charHeight + borderSize) * charScale,
-			charWidth * charScale, charHeight * charScale);
-		
-		if(!(blink && !blinkVisible)) {
-			for(var i = 0; i < charWidth; i++) {
-				var word = fontChar[(i >= 2) * 1];
-				var hword = (word >> (!(i%2) * 8)) & 0xff;
-	
-				for(var j = 0; j < charHeight; j++) {				
-					var pixel = (hword >> j) & 1;
-					
-					if(pixel){
-						ctx.fillStyle = fg;
-						ctx.fillRect((x * charWidth + i + borderSize) * charScale,
-							(y * charHeight + j + borderSize) * charScale,
-							charScale, charScale);
-					}
-				}
-			}
-		}
-    };
+        var fontChar;
+        if(font.address < cpu.ramSize) fontChar = [cpu.get(font.address+charValue * 2), cpu.get(font.address+charValue * 2 + 1)];
+        else fontChar = [defaultFont[charValue * 2], defaultFont[charValue * 2 + 1]];
+        
+        ctx.fillStyle = bg;
+        ctx.fillRect((x * charWidth + borderSize) * charScale,
+            (y * charHeight + borderSize) * charScale,
+            charWidth * charScale, charHeight * charScale);
+        
+        if(!(blink && !blinkVisible)) {
+            for(var i = 0; i < charWidth; i++) {
+                var word = fontChar[(i >= 2) * 1];
+                var hword = (word >> (!(i%2) * 8)) & 0xff;
+    
+                for(var j = 0; j < charHeight; j++) {               
+                    var pixel = (hword >> j) & 1;
+                    
+                    if(pixel){
+                        ctx.fillStyle = fg;
+                        ctx.fillRect((x * charWidth + i + borderSize) * charScale,
+                            (y * charHeight + j + borderSize) * charScale,
+                            charScale, charScale);
+                    }
+                }
+            }
+        }
+    }
     
     function drawLoop() {
-    	if(screen.address < cpu.ramSize) {
-	    	for(var i = 0; i < rows; i++) {
-	    		for(var j = 0; j < cols; j++) {
-	    			var cell = cellQueue[i][j];
-	    			if(cell) {
-	    				drawChar(cpu.get(screen.address + (i * cols) + j), j, i);
-	    				cellQueue[i][j] = false;
-	    			}
-	    		}
-	    	}
-    	}
-    	setTimeout(drawLoop, 1000 / 60);
-    };
+        if(screen.address < cpu.ramSize) {
+            for(var i = 0; i < rows; i++) {
+                for(var j = 0; j < cols; j++) {
+                    var cell = cellQueue[i][j];
+                    if(cell) {
+                        drawChar(cpu.get(screen.address + (i * cols) + j), j, i);
+                        cellQueue[i][j] = false;
+                    }
+                }
+            }
+        }
+        setTimeout(drawLoop, 1000 / 60);
+    }
     drawLoop();
     
     function blinkLoop() {
-    	if(cpu.running) blinkVisible = !blinkVisible;
-    	for(var i = 0; i < rows; i++) {
-    		for(var j = 0; j < cols; j++) {
-    			if(blinkCells[i][j]) {
-    				queueChar(j, i);
-    			}
-    		}
-    	}
-    	setTimeout(blinkLoop, blinkInterval);
-    };
+        if(cpu.running) blinkVisible = !blinkVisible;
+        for(var i = 0; i < rows; i++) {
+            for(var j = 0; j < cols; j++) {
+                if(blinkCells[i][j]) {
+                    queueChar(j, i);
+                }
+            }
+        }
+        setTimeout(blinkLoop, blinkInterval);
+    }
     blinkLoop();
     
     var tickRate = 0, clockInterrupt = 0, clockTicks = 0;
     var clock = {
-    	id: 0x12d0b402,
-    	version: 0,
-    	manufacturer: 0,
-    	onInterrupt: function() {
-    		switch(cpu.mem.a) {
-    			case 0:
-    				if(cpu.mem.b) {
-    					clockTicks = 0;
-    					tickRate = cpu.mem.b;
-    					if(!clockTicking) clockTick();
-    				} else {
-    					tickRate = 0;
-    				}
-    				break;
-    				
-    			case 1:
-    				cpu.mem.c = clockTicks;
-    				break;
-    			
-    			case 2:
-    				clockInterrupt = cpu.mem.b;
-    				break;
-    		}
-    	}
+        id: 0x12d0b402,
+        version: 0,
+        manufacturer: 0,
+        onInterrupt: function() {
+            switch(cpu.mem.a) {
+                case 0:
+                    if(cpu.mem.b) {
+                        clockTicks = 0;
+                        tickRate = cpu.mem.b;
+                        if(!clockTicking) clockTick();
+                    } else {
+                        tickRate = 0;
+                    }
+                    break;
+                    
+                case 1:
+                    cpu.mem.c = clockTicks;
+                    break;
+                
+                case 2:
+                    clockInterrupt = cpu.mem.b;
+                    break;
+            }
+        }
     };
     devices.push(clock);
     
     var clockTicking = false, tickRate = 1;
     function clockTick() {
-    	clockTicking = true;
-    	
-    	if(clockInterrupt) {
-    		cpu.interrupt(clockInterrupt);
-    	}
-    	
-    	clockTicks++;
-    	
-    	if(tickRate) setTimeout(clockTick, 1000 / (60 / tickRate));
-    	else clockTicking = false;
-    };
+        clockTicking = true;
+        
+        if(clockInterrupt) {
+            cpu.interrupt(clockInterrupt);
+        }
+        
+        clockTicks++;
+        
+        if(tickRate) setTimeout(clockTick, 1000 / (60 / tickRate));
+        else clockTicking = false;
+    }
     
     var keyInterrupts = 0;
     var keyboardBuffer = [], keysDown = [];
     var keyMap = {
-    	8: 0x10,
-    	13: 0x11,
-    	45: 0x12,
-    	46: 0x13,
-    	38: 0x80,
-    	40: 0x81,
-    	37: 0x82,
-    	39: 0x83,
-    	16: 0x90,
-    	17: 0x91
+        8: 0x10,
+        13: 0x11,
+        45: 0x12,
+        46: 0x13,
+        38: 0x80,
+        40: 0x81,
+        37: 0x82,
+        39: 0x83,
+        16: 0x90,
+        17: 0x91
     };
     var pressListeners = [
-    	0x10,
-    	0x11,
-    	0x12,
-    	0x13
+        0x10,
+        0x11,
+        0x12,
+        0x13
     ];
     var keyboard = {
-    	id: 0x30cf7406,
-    	version: 1,
-    	manufacturer: 0,
-    	onInterrupt: function(callback) {
-    		switch(cpu.mem.a) {
-    			case 0:
-    				keyboardBuffer = [];
-    				break;
-    			
-    			case 1:
-    				var k = keyboardBuffer.shift() || 0;
-    				cpu.set('c',  k);
-    				break;
-    				
-    			case 2:
-    				cpu.set('c', Number(keysDown[cpu.mem.b] !== 0));
-    				break;
-    				
-    			case 3:
-    				keyInterrupts = cpu.mem.b;
-    				break;
-    		}
-    	}
+        id: 0x30cf7406,
+        version: 1,
+        manufacturer: 0,
+        onInterrupt: function(callback) {
+            switch(cpu.mem.a) {
+                case 0:
+                    keyboardBuffer = [];
+                    break;
+                
+                case 1:
+                    var k = keyboardBuffer.shift() || 0;
+                    cpu.set('c',  k);
+                    break;
+                    
+                case 2:
+                    cpu.set('c', Number(keysDown[cpu.mem.b] !== 0));
+                    break;
+                    
+                case 3:
+                    keyInterrupts = cpu.mem.b;
+                    break;
+            }
+        }
     };
     devices.push(keyboard);
     
     function keyEvent(key) {
-    	if(keyInterrupts) {
-    		cpu.interrupt(keyInterrupts);
-    	}
-    };
+        if(keyInterrupts) {
+            cpu.interrupt(keyInterrupts);
+        }
+    }
     
     $(document).keydown(function(e) {
-    	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = keyMap[e.which] || e.which;
-    		keysDown[key] = Date.now();
-    		
-    		if(pressListeners.indexOf(key) !== -1) keyboardBuffer.push(key);
-    		keyEvent(key);
-    		
-    		if(e.which >= 37 && e.which <= 40 || e.which === 8) e.preventDefault();
-    	}
+        if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
+            var key = keyMap[e.which] || e.which;
+            keysDown[key] = Date.now();
+            
+            if(pressListeners.indexOf(key) !== -1) keyboardBuffer.push(key);
+            keyEvent(key);
+            
+            if(e.which >= 37 && e.which <= 40 || e.which === 8) e.preventDefault();
+        }
     });
     
     $(document).keyup(function(e) {
-    	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = keyMap[e.which] || e.which;
-    		keysDown[key] = 0;
-    		
-    		keyEvent(key);
-    	}
+        if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
+            var key = keyMap[e.which] || e.which;
+            keysDown[key] = 0;
+            
+            keyEvent(key);
+        }
     });
     
     $(document).keypress(function(e) {
-    	if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
-    		var key = keyMap[e.which] || e.which;
-    		keyboardBuffer.push(key);
-	    	keyEvent(key);
-	    	e.preventDefault();
-    	}
+        if(cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
+            var key = keyMap[e.which] || e.which;
+            keyboardBuffer.push(key);
+            keyEvent(key);
+            e.preventDefault();
+        }
     });
     
     function pressLoop() {
-    	if(cpu.running) {
-	    	var now = Date.now();
-	    	for(var i = 0; i < pressListeners.length; i++) {
-	    		if(keysDown[pressListeners[i]] && now - keysDown[pressListeners[i]] > 500) keyboardBuffer.push(pressListeners[i]);
-	    	}
-    	}
-    	setTimeout(pressLoop, 100);
-    };
+        if(cpu.running) {
+            var now = Date.now();
+            for(var i = 0; i < pressListeners.length; i++) {
+                if(keysDown[pressListeners[i]] && now - keysDown[pressListeners[i]] > 500) keyboardBuffer.push(pressListeners[i]);
+            }
+        }
+        setTimeout(pressLoop, 100);
+    }
     pressLoop();
+
+    var sped = new SPED3(document.getElementById('sped3'));
+    devices.push(sped);
     
     while(devices.length > 0) {
-    	var index = Math.floor(Math.random() * devices.length);
-    	cpu.addDevice(devices[index]);
-    	devices.splice(index, 1);
+        var index = Math.floor(Math.random() * devices.length);
+
+        cpu.addDevice(devices[index]);
+        if(typeof devices[index].onConnect === 'function') devices[index].onConnect(cpu);
+
+        devices.splice(index, 1);
     }
-    var drive = new DCPU16.HMD2043(cpu);
-    drive.insert(new DCPU16.HMU1440());
     
     function compile() {
         $('#error').hide();
@@ -481,34 +485,35 @@ $(function() {
         $('#reset').removeClass('disabled');
         cpu.clear();
         clearScreen();
+        sped.reset();
         
         keyInterrupts = false;
-   		keyboardBuffer = [];
-   		keysDown = [];
+        keyboardBuffer = [];
+        keysDown = [];
         
         editor.setLineClass(pcLine, null, null);
         editor.setLineClass(errorLine, null, null);
     }
     
     function drawDebug() {
-    	if($('#debug').hasClass('active')) {
-	    	try {
-		    	stepped = false;
-				   
-				$('#debugDump').val(cpu.getDump());
-		    		
-				editor.setLineClass(pcLine, null, null);
-				pcLine = editor.setLineClass(assembler.instructionMap[assembler.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
-			} catch(e) {
-			   	
-			}
-		}
-    };
+        if($('#debug').hasClass('active')) {
+            try {
+                stepped = false;
+                   
+                $('#debugDump').val(cpu.getDump());
+                    
+                editor.setLineClass(pcLine, null, null);
+                pcLine = editor.setLineClass(assembler.instructionMap[assembler.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
+            } catch(e) {
+                
+            }
+        }
+    }
     
     var pcLine = 0, errorLine = 0;
     var lastRam, stepped = false;
     function debugLoop() {
-    	drawDebug();
+        drawDebug();
        setTimeout(debugLoop, 250);
     }
     //debugLoop();
@@ -525,27 +530,45 @@ $(function() {
     $('#run').click(function() {
         if(!$(this).hasClass('disabled')) {
             if(compile()) {
-            	notRun = false;
+                notRun = false;
                 $('#step').addClass('disabled');
                 $('#run').addClass('disabled');
                 $('#run span').text('Running...');
                 $('#reset').addClass('disabled');
                 try {
-                	cpu.run();
-	            } catch(e) {
-		           runtimeError(e);
-		        }
+                    cpu.run();
+                } catch(e) {
+                   runtimeError(e);
+                }
             }
+        }
+    });
+
+    $('#show-lem').click(function() {
+        $('#show-lem').toggleClass('active');
+        if(!$('#show-lem').hasClass('active')) {
+            $('#canvas').css('display', 'none');
+        } else {
+            $('#canvas').css('display', 'block');
+        }
+    });
+
+    $('#show-sped').click(function() {
+        $('#show-sped').toggleClass('active');
+        if(!$('#show-sped').hasClass('active')) {
+            $('#sped3').css('display', 'none');
+        } else {
+            $('#sped3').css('display', 'block');
         }
     });
     
     function runtimeError(e) {
-    	$('#error strong').text('Runtime error: ');
-		$('#error span').text(e.message);
-		errorLine = editor.setLineClass(assembler.instructionMap[
-			assembler.addressMap[cpu.mem.pc] - 1], null, 'errorLine');
-		$('#error').show();
-		end();
+        $('#error strong').text('Runtime error: ');
+        $('#error span').text(e.message);
+        errorLine = editor.setLineClass(assembler.instructionMap[
+            assembler.addressMap[cpu.mem.pc] - 1], null, 'errorLine');
+        $('#error').show();
+        end();
     }
 
     $('#stop').click(function() {
@@ -577,17 +600,17 @@ $(function() {
     $('#step').click(function() {
         if(!$(this).hasClass('disabled')) {
             try {
-            	cpu.step();
-	        } catch(e) {
-		    	runtimeError(e);
-		    }
+                cpu.step();
+            } catch(e) {
+                runtimeError(e);
+            }
             stepped = true;
             drawDebug();
         }
     });
     
     $('#info').click(function() {
-    	if(!$('#info').hasClass('active')) {
+        if(!$('#info').hasClass('active')) {
             $('#info i').removeClass('icon-chevron-down');
             $('#info i').addClass('icon-chevron-up');
             $('#savePanel').collapse('show');
@@ -599,19 +622,19 @@ $(function() {
     });
     
     $('#save').click(function() {
-    	var data = {
-    		title: $('#saveTitle').val(),
-    		author: $('#saveAuthor').val(),
-    		description: $('#saveDescription').val(),
-    		password: $('#savePassword').val(),
-    		code: window.editor.getValue(),
-    		id: $('#saveId').val()
-    	};
-    	if($('#saveFork')) data.fork = $('#saveFork').val();
-    	$.post('/', data, function(data) {
-    		window.location = data;
-    	}, 'text').error(function() {
-    		$('#saveAlert').show();
-    	});
+        var data = {
+            title: $('#saveTitle').val(),
+            author: $('#saveAuthor').val(),
+            description: $('#saveDescription').val(),
+            password: $('#savePassword').val(),
+            code: window.editor.getValue(),
+            id: $('#saveId').val()
+        };
+        if($('#saveFork')) data.fork = $('#saveFork').val();
+        $.post('/', data, function(data) {
+            window.location = data;
+        }, 'text').error(function() {
+            $('#saveAlert').show();
+        });
     });
 });

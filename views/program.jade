@@ -9,10 +9,16 @@ append left
 append right
   div#rightFix
     div#consoleContainer
-      h2 Console
+      h2 Displays
       pre#console.console
-        canvas#canvas(width="420", height="324")
+        div.btn-group
+          button#show-lem.btn.btn-inverse.active
+            span LEM1802
+          button#show-sped.btn.btn-inverse
+            span SPED-3
+        canvas#canvas(width="420", height="324", style="margin-left:auto;margin-right:auto")
         canvas#fontCanvas(width="128", height="32", style="display:none")
+        div#sped3(style="width:256px;height:256px;margin-left:auto;margin-right:auto;display:none")
     div#error.alert.alert-error(style="display:none")
       strong ERROR: 
       span
@@ -42,8 +48,8 @@ append right
 append scripts
   script(src="/js/cpu.js")
   script(src="/js/assembler.js")
-  script(src="/js/HMD2043.js")
-  script(src="/js/HMU1440.js")
+  script(src="/js/three.min.js")
+  script(src="/js/SPED3.js")
   script(src="/js/codemirror.js")
   script(src="/js/mode.js")
   script(src="/js/ui.js")
