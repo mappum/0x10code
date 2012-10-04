@@ -239,7 +239,7 @@ $(function() {
         for(var i = 0; i < rows; i++) {
             for(var j = 0; j < cols; j++) {
                 queueChar(j, i);
-            }   
+            }
         }
     }
     
@@ -263,7 +263,7 @@ $(function() {
                 var word = fontChar[(i >= 2) * 1];
                 var hword = (word >> (!(i%2) * 8)) & 0xff;
     
-                for(var j = 0; j < charHeight; j++) {               
+                for(var j = 0; j < charHeight; j++) {
                     var pixel = (hword >> j) & 1;
                     
                     if(pixel){
@@ -285,6 +285,11 @@ $(function() {
                     if(cell) {
                         drawChar(cpu.get(screen.address + (i * cols) + j), j, i);
                         cellQueue[i][j] = false;
+
+                        if(!lemClicked && $('#canvas').css('display') === 'none') {
+                            $('#canvas').css('display', 'block');
+                            $('#show-lem').addClass('active');
+                        }
                     }
                 }
             }
@@ -444,6 +449,14 @@ $(function() {
     pressLoop();
 
     var sped = new SPED3(document.getElementById('sped3'));
+    var onDraw = function() {
+        if(!lemClicked && $('#canvas').css('display') === 'none') {
+            $('#sped3').css('display', 'block');
+            $('#show-sped').addClass('active');
+        }
+        sped.offDraw(onDraw);
+    };
+    sped.onDraw(onDraw);    
     devices.push(sped);
     
     while(devices.length > 0) {
@@ -544,8 +557,11 @@ $(function() {
         }
     });
 
+    var lemClicked = false;
     $('#show-lem').click(function() {
+        lemClicked = true;
         $('#show-lem').toggleClass('active');
+
         if(!$('#show-lem').hasClass('active')) {
             $('#canvas').css('display', 'none');
         } else {
@@ -553,9 +569,12 @@ $(function() {
         }
     });
 
+    var spedClicked = false;
     $('#show-sped').click(function() {
+        spedClicked = true;
         $('#show-sped').toggleClass('active');
         if(!$('#show-sped').hasClass('active')) {
+
             $('#sped3').css('display', 'none');
         } else {
             $('#sped3').css('display', 'block');

@@ -38,6 +38,8 @@
         this.renderer.setSize(width, height);
         container.appendChild(this.renderer.domElement);
 
+        this._drawListeners = [];
+
         this.render();
     }
 
@@ -106,6 +108,10 @@
         var line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0x1FCC2A, opacity: 0.5 }));
         line.dynamic = true;
         this.scene.add(line);
+
+        for(var i = 0; i < this._drawListeners.length; i++) {
+            this._drawListeners[i]();
+        }
     };
     
     SPED3.prototype.onConnect = function(cpu) {
@@ -141,6 +147,15 @@
             case 2: this.rotate(this.cpu.get('x')); break;
         }
         callback();
+    };
+
+    SPED3.prototype.onDraw = function(listener) {
+        this._drawListeners.push(listener);
+    };
+
+    SPED3.prototype.offDraw = function(listener) {
+        var index = this._drawListeners.indexOf(listener);
+        if(index > -1) this._drawListeners = this._drawListeners.splice(index, 1);
     };
 
     SPED3.prototype.reset = function() {
