@@ -114,7 +114,7 @@
             geometry.vertices.push(vertex.position);
         }
 
-        var line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0x1FCC2A, opacity: 0.5 }));
+        var line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0x1FCC2A, opacity: 0.25 }));
         line.dynamic = true;
         this.scene.add(line);
 
