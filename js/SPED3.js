@@ -10,7 +10,7 @@
         'ERROR_BROKEN': 0xffff
     };
     
-    function SPED3(container) {       
+    function SPED3(container) {
         this.id = 0x42babf3c;
         this.version = 0x0003;
         this.manufacturer = 0x1eb37e91;
@@ -82,13 +82,13 @@
         };
         var materials = [
             new THREE.ParticleCanvasMaterial({color: 0, program: renderVertex}),
-            new THREE.ParticleCanvasMaterial({color: 0x117A18, program: renderVertex}),
             new THREE.ParticleCanvasMaterial({color: 0xA11313, program: renderVertex}),
+            new THREE.ParticleCanvasMaterial({color: 0x117A18, program: renderVertex}),
             new THREE.ParticleCanvasMaterial({color: 0x15158A, program: renderVertex}),
 
             new THREE.ParticleCanvasMaterial({color: 0x888, program: renderVertex}),
-            new THREE.ParticleCanvasMaterial({color: 0x0EF01D, program: renderVertex}),
             new THREE.ParticleCanvasMaterial({color: 0xA11313, program: renderVertex}),
+            new THREE.ParticleCanvasMaterial({color: 0x0EF01D, program: renderVertex}),
             new THREE.ParticleCanvasMaterial({color: 0x3B3BFF, program: renderVertex})
         ];
 
@@ -105,16 +105,16 @@
 
             var vertex = new THREE.Particle(materials[color]);
             vertex.position.x = x;
-            vertex.position.y = y;
-            vertex.position.z = z;
-            vertex.scale.x = vertex.scale.y = vertex.scale.z = 4;
+            vertex.position.y = z;
+            vertex.position.z = y;
+            vertex.scale.x = vertex.scale.y = vertex.scale.z = 2;
             vertex.dynamic = true;
             this.scene.add(vertex);
 
             geometry.vertices.push(vertex.position);
         }
 
-        var line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0x1FCC2A, opacity: 0.25 }));
+        var line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0x1FCC2A, opacity: 0.3 }));
         line.dynamic = true;
         this.scene.add(line);
 
