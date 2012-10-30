@@ -220,7 +220,7 @@ describe('connections:', function(){
     });
     it('should return an error if malformed uri passed', function(done){
       var db = mongoose.createConnection('mongodb:///fake', function (err) {
-        assert.equal('Missing connection hostname.', err.message);
+        assert.equal('Missing hostname.', err.message);
         done();
       });
       assert.equal('object', typeof db.options);
@@ -235,7 +235,7 @@ describe('connections:', function(){
     })
     it('should return an error if db was not specified', function(done){
       var db = mongoose.createConnection('mongodb://localhost', function (err) {
-        assert.equal('Missing connection database.', err.message);
+        assert.equal('Missing database name.', err.message);
         done();
       });
       assert.equal('object', typeof db.options);
@@ -341,6 +341,25 @@ describe('connections:', function(){
       // this callback has no params which triggered the bug #759
       done();
     });
+  })
+
+  describe('openSet', function(){
+    it('accepts uris, dbname, options', function(done){
+      var m = new mongoose.Mongoose;
+      var uris = process.env.MONGOOSE_SET_TEST_URI;
+      if (!uris) return done();
+
+      m.connection.on('error', done);
+      m.connection.on('open', function () {
+        m.connection.close(done);
+      });
+
+      try {
+        m.connect(uris, 'mongoose_test', { server: { auto_reconnect: true }});
+      } catch (err) {
+        done(err);
+      }
+    })
   })
 })
 

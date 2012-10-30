@@ -195,12 +195,12 @@ Connection.prototype.open = function (host, database, port, options, callback) {
   }
 
   if (!host) {
-    this.error(new Error('Missing connection hostname.'), callback);
+    this.error(new Error('Missing hostname.'), callback);
     return this;
   }
 
   if (!database) {
-    this.error(new Error('Missing connection database.'), callback);
+    this.error(new Error('Missing database name.'), callback);
     return this;
   }
 
@@ -268,13 +268,27 @@ Connection.prototype.openSet = function (uris, database, options, callback) {
 
   switch (arguments.length) {
     case 3:
-      this.name = database;
-      if ('function' === typeof options) callback = options, options = {};
+      switch (typeof database) {
+        case 'string':
+          this.name = database;
+          break;
+        case 'object':
+          callback = options;
+          options = database;
+          database = null;
+          break;
+      }
+
+      if ('function' === typeof options) {
+        callback = options;
+        options = {};
+      }
       break;
     case 2:
       switch (typeof database) {
         case 'string':
           this.name = database;
+          break;
         case 'function':
           callback = database, database = null;
           break;
@@ -606,8 +620,11 @@ Connection.prototype.defaultOptions = function (options) {
     o.server.auto_reconnect = true;
   }
 
-  o.db = o.db || {};
+  o.db || (o.db = {});
   o.db.forceServerObjectId = false;
+
+  // TODO default to true once the driver is fixed
+  if (!('safe' in o.db)) o.db.safe = false;
 
   return o;
 }

@@ -2,7 +2,7 @@ var mongoose = require('mongoose'),
 	Schema = mongoose.Schema;
 
 var programSchema = new Schema({
-	'id':          {'type': String, 'unique': true},
+	'id':          {'type': String, 'unique': true, 'index:': true},
     'title':       {'type': String, 'default': 'Untitled'},
     'author':      {'type': String, 'default': 'Anonymous'},
     'description': {'type': String, 'default': ''},

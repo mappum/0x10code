@@ -8,7 +8,7 @@ exports.get = function(id, callback) {
 	if(!callback) {
 		return scoped;
 	} else {
-		scoped.run(callback);
+		scoped.exec(callback);
 	}
 };
 
@@ -29,9 +29,10 @@ exports.set = function(data, callback) {
 };
 
 exports.sort = function(field, params, callback) {
-	var params = params || {}
-		, fields = ['title', 'author', 'description', 'views', 'id', 'date']
-		, scoped = Program.find(params).select(fields).sort(field, 'descending');
+	params = params || {};
+
+	var fields = {'title': 1, 'author': 1, 'description': 1, 'views': 1, 'id': 1, 'date': 1},
+		scoped = Program.find(params).select(fields).sort(field);
 
 	if(!callback) {
 		return scoped;

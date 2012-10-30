@@ -21,11 +21,11 @@ app.set('views', './views');
 app.set('view engine', 'jade');
 app.set('view options', {layout: false});
 app.use(express.bodyParser());
-app.use(express['static'](__dirname + '/', { maxAge: 10 * 60 * 1000 }));
+app.use(express['static'](__dirname + '/public', { maxAge: 10 * 60 * 1000 }));
 app.helpers(require('express-pagination'));
 
 function render(type, res, o, callback) {
-	programDb.sort('date', {password: ''}).limit(25).run(function(err, recent) {
+	programDb.sort('-date', {password: ''}).limit(25).exec(function(err, recent) {
 		recent.moment = moment;
 
 		o.recent = recent;
@@ -52,18 +52,18 @@ function paginate(scope, currentPage, itemsPerPage, callback) {
 
 	scope.count(function(err, totalItems) {
 		if(!err) {
-			scope.limit(itemsPerPage).skip(offset).run('find', function(err, currentItems) {
+			scope.limit(itemsPerPage).skip(offset).exec('find', function(err, currentItems) {
 				callback(err, currentItems, totalItems);
 			});
-		} else {	
+		} else {
 			callback(err);
 		}
 	});
 }
 
 function renderPaginated(scope, type, res, o, callback) {
-	var resultsPerPage = 25
-		, currentPage = o.currentPage || 1;
+	var resultsPerPage = 25,
+		currentPage = o.currentPage || 1;
 
 	paginate(scope, currentPage, resultsPerPage, function(err, posts, totalPosts) {
 		o.posts = posts;
@@ -75,7 +75,7 @@ function renderPaginated(scope, type, res, o, callback) {
 }
 
 app.get('/top', function(req, res) {
-	var sorted  = programDb.sort('views', {password: ''});
+	var sorted  = programDb.sort('-views', {password: ''});
 	renderPaginated(sorted, 'list', res, {
 		current: 'top',
 		currentPage: req.query.page,

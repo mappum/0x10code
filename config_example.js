@@ -1,4 +1,4 @@
-exports = {
+module.exports = {
 	port: 80,
 	sitename: "0x10co.de",
 	mongoUri: "mongodb://<user>:<password>@host:port/database",

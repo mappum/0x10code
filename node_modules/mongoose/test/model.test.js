@@ -135,7 +135,7 @@ describe('model', function(){
     })
   });
 
-  describe('schema:', function(){
+  describe('schema', function(){
     it('should exist', function(){
       var db = start()
         , BlogPost = db.model('BlogPost', collection);
@@ -3948,7 +3948,86 @@ describe('model', function(){
         });
       });
     })
+    it('saved changes made within callback of a previous no-op save gh-1139', function(done){
+      var db = start()
+        , B = db.model('BlogPost', collection);
+
+      var post = new B({ title: 'first' });
+      post.save(function (err) {
+        assert.ifError(err);
+
+        // no op
+        post.save(function (err) {
+          assert.ifError(err);
+
+          post.title = 'changed';
+          post.save(function (err) {
+            assert.ifError(err);
+
+            B.findById(post, function (err, doc) {
+              assert.ifError(err);
+              assert.equal('changed', doc.title);
+              done();
+            })
+          })
+        })
+      })
+    })
+
   });
+
+  describe('_delta()', function(){
+    it('should overwrite arrays when directly set (gh-1126)', function(done){
+      var db = start()
+        , B = db.model('BlogPost', collection);
+
+      B.create({ title: 'gh-1126', numbers: [1,2] }, function (err, b) {
+        assert.ifError(err);
+        B.findById(b._id, function (err, b) {
+          assert.ifError(err);
+          assert.deepEqual([1,2].join(), b.numbers.join());
+
+          b.numbers = [];
+          b.numbers.push(3);
+
+          var d = b._delta()[1];
+          assert.ok('$set' in d, 'invalid delta ' + JSON.stringify(d));
+          assert.ok(Array.isArray(d.$set.numbers));
+          assert.equal(d.$set.numbers.length, 1);
+          assert.equal(d.$set.numbers[0], 3);
+
+          b.save(function (err) {
+            assert.ifError(err);
+
+            B.findById(b._id, function (err, b) {
+              assert.ifError(err);
+              assert.ok(Array.isArray(b.numbers));
+              assert.equal(1, b.numbers.length);
+              assert.equal(3, b.numbers[0]);
+
+              b.numbers = [3];
+              var d = b._delta();
+              assert.ok(!d);
+
+              b.numbers = [4];
+              b.numbers.push(5);
+              b.save(function (err) {
+                assert.ifError(err);
+                B.findById(b._id, function (err, b) {
+                  assert.ifError(err);
+                  assert.ok(Array.isArray(b.numbers));
+                  assert.equal(2, b.numbers.length);
+                  assert.equal(4, b.numbers[0]);
+                  assert.equal(5, b.numbers[1]);
+                  done();
+                })
+              })
+            })
+          })
+        })
+      });
+    })
+  })
 
   describe('backward compatibility', function(){
     it('with conflicted data in db', function(done){

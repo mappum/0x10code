@@ -9,17 +9,34 @@ var url = require('url')
   , collection = 'blogposts_' + random();
 
 describe('mongoose module:', function(){
-  it('default connection works', function(done){
-    var db = mongoose.connection
-      , uri = 'mongodb://localhost/mongoose_test'
+  describe('default connection works', function(){
+    it('without options', function(done){
+      var goose = new Mongoose;
+      var db = goose.connection
+        , uri = 'mongodb://localhost/mongoose_test'
 
-    mongoose.connect(process.env.MONGOOSE_TEST_URI || uri);
+      goose.connect(process.env.MONGOOSE_TEST_URI || uri);
 
-    db.on('open', function(){
-      db.close(function () {
-        done();
+      db.on('open', function(){
+        db.close(function () {
+          done();
+        });
       });
-    });
+    })
+
+    it('with options', function(done){
+      var goose = new Mongoose;
+      var db = goose.connection
+        , uri = 'mongodb://localhost/mongoose_test'
+
+      goose.connect(process.env.MONGOOSE_TEST_URI || uri, {db:{safe:false}});
+
+      db.on('open', function(){
+        db.close(function () {
+          done();
+        });
+      });
+    })
   });
 
   it('{g,s}etting options', function(){
@@ -172,6 +189,32 @@ describe('mongoose module:', function(){
       mong.connection.close();
       done();
     });
+  });
+
+  describe('connecting with a signature of uri, options, function', function(){
+    it('with single mongod', function(done){
+      var mong = new Mongoose()
+        , uri = process.env.MONGOOSE_TEST_URI || 'mongodb://localhost/mongoose_test';
+
+      mong.connect(uri, { db: { safe: false }}, function (err) {
+        assert.ifError(err);
+        mong.connection.close();
+        done();
+      });
+    })
+
+    it('with replset', function(done){
+      var mong = new Mongoose()
+        , uri = process.env.MONGOOSE_SET_TEST_URI
+
+      if (!uri) return done();
+
+      mong.connect(uri, { db: { safe: false }}, function (err) {
+        assert.ifError(err);
+        mong.connection.close();
+        done();
+      });
+    })
   });
 
   it('goose.connect() to a replica set', function(done){
