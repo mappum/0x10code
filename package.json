@@ -1,14 +1,24 @@
 {
-	"name": "0x10code",
-	"version": "0.0.1",
-	"dependencies": {
-		"express": "2.5.9",
-		"express-pagination": "*",
-		"mongoose": "*",
-		"node-markdown": "*",
-		"moment": "*",
-		"jade": "*",
-		"markdown": "*"
-	}
+  "name": "0x10code",
+  "version": "0.0.1-1",
+  "dependencies": {
+    "express": "2.5.9",
+    "express-pagination": "*",
+    "mongoose": "*",
+    "node-markdown": "*",
+    "moment": "*",
+    "jade": "*",
+    "markdown": "*"
+  },
+  "subdomain": "0x10code",
+  "domains": [
+    "0x10co.de",
+    "www.0x10co.de"
+  ],
+  "scripts": {
+    "start": "app.js"
+  },
+  "engines": {
+    "node": "0.8.x"
+  }
 }
-
