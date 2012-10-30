@@ -14,7 +14,7 @@ var express = require('express'),
 	programDb = require('./controllers/program.js'),
 	config = require('./config.js');
 
-mongoose.connect('mongodb://localhost/0x10code');
+mongoose.connect(config.mongoUri);
 
 var app = express.createServer();
 app.set('views', './views');

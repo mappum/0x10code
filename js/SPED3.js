@@ -71,8 +71,6 @@
 
         this.clear();
 
-        var geometry = new THREE.Geometry();
-
         var PI2 = Math.PI * 2;
         var renderVertex = function(context) {
             context.beginPath();
@@ -91,12 +89,12 @@
             new THREE.ParticleCanvasMaterial({color: 0x0EF01D, program: renderVertex}),
             new THREE.ParticleCanvasMaterial({color: 0x3B3BFF, program: renderVertex})
         ];
+        var lastGeometry = new THREE.Geometry();
+        var lastPoint = null;
 
-        var memory = this.cpu.mem.slice(this.memoryListener.address,
-            this.memoryListener.address + this.memoryListener.length);
-        for(i = 0; i < memory.length; i += 2) {
-            var word1 = memory[i];
-            var word2 = memory[i+1];
+        for(i = 0; i < this.cpu.mem.length; i += 2) {
+            var word1 = this.cpu.mem[i];
+            var word2 = this.cpu.mem[i+1];
 
             var x = word1 & 0xff;
             var y = (word1 >> 8) & 0xff;
