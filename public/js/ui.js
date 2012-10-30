@@ -484,7 +484,9 @@ $(function() {
         } catch(e) {
             $('#error strong').text('Assembler error: ');
             $('#error span').text(e.message);
-            errorLine = editor.setLineClass(assembler.instructionMap[assembler.instruction] - 1, null, 'errorLine');
+            try {
+                errorLine = editor.setLineClass(assembler.instructionMap[assembler.instruction - 1] - 1, null, 'errorLine');
+            } catch(e) {}
             $('#error').show();
             return false;
         }
