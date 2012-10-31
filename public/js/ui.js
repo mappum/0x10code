@@ -43,273 +43,17 @@ $(function() {
     var cpu = new DCPU16.CPU(), assembler, notRun = false;
     var instructionMap = [], addressMap = [];
     var devices = [];
-    
-    function clearScreen() {
-        ctx.fillStyle = getColor(0);
-        ctx.fillRect(0, 0, 500, 500);
-    };
-    
-    function getColor(val) {
-        val &= 0xf;
-        
-        var color;
-        if(palette.address < cpu.ramSize) color = cpu.get(palette.address + val);
-        else color = defaultPalette[val];
-        
-        var r = ((color & 0xf00) >> 8) * 17;
-        var g = ((color & 0xf0) >> 4) * 17;
-        var b = (color & 0xf) * 17;
-        
-        return 'rgb(' + r +',' + g + ',' + b + ')';
-    };
-    
-    var defaultPalette = [
-        0x000,
-        0x00a,
-        0x0a0,
-        0x0aa,
-        
-        0xa00,
-        0xa0a,
-        0xa50,
-        0xaaa,
-        
-        0x555,
-        0x55f,
-        0x5f5,
-        0x5ff,
-        
-        0xf55,
-        0xf5f,
-        0xff5,
-        0xfff
-    ];
-    
-    var defaultFont = [];
-    var charWidth = 4, charHeight = 8;
-    var charScale = 3;
-    (function() {
-        var fontCanvas = document.getElementById('fontCanvas'); 
-        var fontCtx = fontCanvas.getContext('2d');
-        var fontImage = new Image();
-        fontImage.onload = function() {
-            fontCtx.drawImage(fontImage, 0, 0);
-            
-            for(var i = 0; i < charWidth; i++) {
-                for(var j = 0; j < 32; j++) {
-                    var fontData = fontCtx.getImageData(j * charWidth, i * charHeight, charWidth, charHeight),
-                        charId = (i * 32) + j;
-                        
-                    for(var k = 0; k < charWidth; k++) {
-                        var col = 0;
-                        for(var l = 0; l < charHeight; l++) {
-                            var pixelId = l * charWidth + k;
-                            col |= (((fontData.data[pixelId * charWidth + 1] > 128) * 1) << l);
-                        }
-                        defaultFont[(charId * 2) + Math.floor(k/2)] |= (col << (((k+1)%2) * charHeight));
-                    }
-                }
-            }
-        };
-        fontImage.src = '/img/font.png';
-    })();
-    
-    var canvas = document.getElementById('canvas');
-    var blinkCells = [], cellQueue = [];
-    var blinkInterval = 700;
-    var ctx = canvas.getContext('2d');
-    
-    var cols = 32, rows = 12;
-    var borderSize = 6;
-    
-    $('canvas')
-        .attr('width', (charWidth * cols + borderSize * 2) * charScale)
-        .attr('height', (charHeight * rows + borderSize * 2) * charScale);
-        
-    var screen = cpu.onSet(cpu.ramSize, cols * rows, function(key, val) {
-        var row = Math.floor(key / cols), col = key % cols;
-           
-        queueChar(col, row);
-           
-        if(((val >> 7) & 1) === 1) blinkCells[row][col] = true;
-        else blinkCells[row][col] = false;
-    });
-    
-    var font = cpu.onSet(cpu.ramSize, 256, function(key, val) {
-        if(screen.address < cpu.ramSize) {
-            var value = Math.floor(key / 2);
-                
-            for(var i = 0; i < screen.length; i++) {
-                if((cpu.get(screen.address + i) & 0x7f) === value) {
-                    queueChar(i % cols, Math.floor(i / cols));
-                }
-            }
-        }
-    });
-    
-    var palette = cpu.onSet(cpu.ramSize, 16, function(key, val) {
-        if(screen.address < cpu.ramSize) {              
-            for(var i = 0; i < screen.length; i++) {
-                if(((cpu.get(screen.address + i) & 0xf00) >> 8) === key
-                || ((cpu.get(screen.address + i) & 0xf000) >> 12) === key) {
-                    queueChar(i % cols, Math.floor(i / cols));
-                }
-            }
-        }
-    });
  
-    var displayDevice = {
-        id: 0x7349f615,
-        version: 0x1802,
-        manufacturer: 0x1c6c8b36,
-        onInterrupt: function(callback) {
-            switch(cpu.mem.a) {
-                // MEM_MAP_SCREEN
-                case 0:
-                    if(cpu.mem.b > 0) {
-                        screen.address = cpu.mem.b;
-                    } else {
-                        screen.address = cpu.ramSize;
-                    }
-                    drawScreen();
-                    break;
-                    
-                // MEM_MAP_FONT
-                case 1:
-                    if(cpu.mem.b > 0) {
-                        font.address = cpu.mem.b;
-                    } else {
-                        font.address = cpu.ramSize;
-                    }
-                    drawScreen();
-                    break;
-                    
-                // MEM_MAP_PALETTE
-                case 2:
-                    if(cpu.mem.b > 0) {
-                        palette.address = cpu.mem.b;
-                    } else {
-                        palette.address = cpu.ramSize;
-                    }
-                    drawScreen();
-                    break;
-                    
-                // SET_BORDER_COLOR
-                case 3:
-                    var width = (charWidth * cols + borderSize * 2) * charScale,
-                        height = (charHeight * rows + borderSize * 2) * charScale;
-                    ctx.fillStyle = getColor(cpu.mem.b & 0xf);
-                    ctx.fillRect(0, 0, width, borderSize * charScale);
-                    ctx.fillRect(0, height - borderSize * charScale, width, borderSize * charScale);
-                    ctx.fillRect(0, 0, borderSize * charScale, height);
-                    ctx.fillRect(width - borderSize * charScale, 0, borderSize * charScale, height);
-                    break;
-                
-                // MEM_DUMP_FONT
-                case 4:
-                    for(var i = 0; i < defaultFont.length; i++) {
-                        cpu.set(cpu.mem.b + i, defaultFont[i]);
-                    }
-                    cpu.cycle += 256;
-                    break;
-                    
-                // MEM_DUMP_PALETTE
-                case 5:
-                    for(var i = 0; i < defaultPalette.length; i++) {
-                        cpu.set(cpu.mem.b + i, defaultPalette[i]);
-                    }
-                    cpu.cycle += 16;
-                    break;
-            }
-            callback();
+    var screen = new LEM1802('canvas');
+    devices.push(screen);
+    var onScreenDraw = function() {
+        if(!lemClicked && $('#canvas').css('display') === 'none') {
+            $('#canvas').css('display', 'block');
+            $('#show-lem').addClass('active');
         }
+        screen.offDraw(onScreenDraw);
     };
-    devices.push(displayDevice);
-    
-    for(var i = 0; i < rows; i++) {
-        cellQueue.push([]);
-        blinkCells.push([]);
-    }
-    
-    function queueChar(x, y) {
-        if(x < cols && y < rows) cellQueue[y][x] = true;
-    }
-    
-    function drawScreen() {
-        for(var i = 0; i < rows; i++) {
-            for(var j = 0; j < cols; j++) {
-                queueChar(j, i);
-            }
-        }
-    }
-    
-    var blinkVisible = false;
-    function drawChar(value, x, y) {
-        var charValue = value & 0x7f,
-            fg = getColor((value >> 12) & 0xf),
-            bg = getColor((value >> 8) & 0xf),
-            blink = ((value >> 7) & 1) === 1;
-        var fontChar;
-        if(font.address < cpu.ramSize) fontChar = [cpu.get(font.address+charValue * 2), cpu.get(font.address+charValue * 2 + 1)];
-        else fontChar = [defaultFont[charValue * 2], defaultFont[charValue * 2 + 1]];
-        
-        ctx.fillStyle = bg;
-        ctx.fillRect((x * charWidth + borderSize) * charScale,
-            (y * charHeight + borderSize) * charScale,
-            charWidth * charScale, charHeight * charScale);
-        
-        if(!(blink && !blinkVisible)) {
-            for(var i = 0; i < charWidth; i++) {
-                var word = fontChar[(i >= 2) * 1];
-                var hword = (word >> (!(i%2) * 8)) & 0xff;
-    
-                for(var j = 0; j < charHeight; j++) {
-                    var pixel = (hword >> j) & 1;
-                    
-                    if(pixel){
-                        ctx.fillStyle = fg;
-                        ctx.fillRect((x * charWidth + i + borderSize) * charScale,
-                            (y * charHeight + j + borderSize) * charScale,
-                            charScale, charScale);
-                    }
-                }
-            }
-        }
-    }
-    
-    function drawLoop() {
-        if(screen.address < cpu.ramSize) {
-            for(var i = 0; i < rows; i++) {
-                for(var j = 0; j < cols; j++) {
-                    var cell = cellQueue[i][j];
-                    if(cell) {
-                        drawChar(cpu.get(screen.address + (i * cols) + j), j, i);
-                        cellQueue[i][j] = false;
-
-                        if(!lemClicked && $('#canvas').css('display') === 'none') {
-                            $('#canvas').css('display', 'block');
-                            $('#show-lem').addClass('active');
-                        }
-                    }
-                }
-            }
-        }
-        setTimeout(drawLoop, 1000 / 60);
-    }
-    drawLoop();
-    
-    function blinkLoop() {
-        if(cpu.running) blinkVisible = !blinkVisible;
-        for(var i = 0; i < rows; i++) {
-            for(var j = 0; j < cols; j++) {
-                if(blinkCells[i][j]) {
-                    queueChar(j, i);
-                }
-            }
-        }
-        setTimeout(blinkLoop, blinkInterval);
-    }
-    blinkLoop();
+    screen.onDraw(onScreenDraw);
     
     var tickRate = 0, clockInterrupt = 0, clockTicks = 0;
     var clock = {
@@ -461,10 +205,7 @@ $(function() {
     
     while(devices.length > 0) {
         var index = Math.floor(Math.random() * devices.length);
-
         cpu.addDevice(devices[index]);
-        if(typeof devices[index].onConnect === 'function') devices[index].onConnect(cpu);
-
         devices.splice(index, 1);
     }
     
@@ -484,9 +225,11 @@ $(function() {
         } catch(e) {
             $('#error strong').text('Assembler error: ');
             $('#error span').text(e.message);
+
             try {
                 errorLine = editor.setLineClass(assembler.instructionMap[assembler.instruction - 1] - 1, null, 'errorLine');
             } catch(e) {}
+
             $('#error').show();
             return false;
         }
@@ -499,7 +242,7 @@ $(function() {
         $('#run').removeClass('disabled');
         $('#reset').removeClass('disabled');
         cpu.clear();
-        clearScreen();
+        screen.clear();
         sped.reset();
         
         keyInterrupts = false;
@@ -554,6 +297,7 @@ $(function() {
                     cpu.run();
                 } catch(e) {
                    runtimeError(e);
+                   console.log(e);
                 }
             }
         }
