@@ -22,6 +22,14 @@ root.getSigned = function(word) {
     return word-sign;
 };
 
+var roundTowardsZero = function (number) {
+    if (number > 0) {
+        return Math.floor(number);
+    } else {
+        return Math.ceil(number);
+    }
+};
+
 var opcodes = [
     //assembler directives
     {id: 'DAT', cost: 0, args: Infinity},
@@ -80,8 +88,8 @@ var opcodes = [
 root.OPCODES = {};
 
 for(var i = 0; i < opcodes.length; i++) {
-	root.OPCODES[opcodes[i].id] = opcodes[i];
-	root.OPCODES[opcodes[i].code] = opcodes[i];
+    root.OPCODES[opcodes[i].id] = opcodes[i];
+    root.OPCODES[opcodes[i].code] = opcodes[i];
 }
 
 root.REGISTER_NAMES = ['a', 'b', 'c', 'x', 'y', 'z', 'i', 'j'];
@@ -107,7 +115,7 @@ var CPU = function CPU() {
     this.speed = 100000; //speed in hz
     this.loopBatch = 3000; //the number of loops to execute at a time in run
 
-	this.paused = false;
+    this.paused = false;
 
     this._stop = false;
     this._endListeners = [];
@@ -116,6 +124,7 @@ var CPU = function CPU() {
     
     this._interruptQueue = [];
     this._triggerInterrupts = true;
+    this._justReturnedFromInterrupt = false;
 
     this.clear();
 };
@@ -125,7 +134,7 @@ CPU.prototype = {
         var pc = this.mem.pc;
 
         var word = this.get(pc);
-        this.mem.pc = pc + 1;
+        this.mem.pc = (pc + 1) & 0xffff;
         this.cycle++;
 
         return word;
@@ -136,15 +145,15 @@ CPU.prototype = {
 
         if((word & 0x1f) === 0) {
             return {
-            	opcode: word & 0x3ff,
-            	a: this.addressFor((word & 0xfc00) >> 10, true)
+                opcode: word & 0x3ff,
+                a: this.addressFor((word & 0xfc00) >> 10, true)
             };
         } else {
-        	return {
-        		opcode: word & 0x1f,
-        		a: this.addressFor((word & 0xfc00) >> 10, true),
-        		b: this.addressFor((word & 0x3e0) >> 5)
-        	};
+            return {
+                opcode: word & 0x1f,
+                a: this.addressFor((word & 0xfc00) >> 10, true),
+                b: this.addressFor((word & 0x3e0) >> 5)
+            };
         }
     },
 
@@ -167,8 +176,8 @@ CPU.prototype = {
 
         // Encoded literals
         if(value >= 0x20 && value <= 0x3f) {
-        	var output = value - 0x21;
-        	output &= this.maxValue;
+            var output = value - 0x21;
+            output &= this.maxValue;
             return output | root.FLAG_LITERAL;
         }
 
@@ -176,20 +185,17 @@ CPU.prototype = {
         switch(value) {
             // stack pointer
             case 0x18:
-            	if(a) {
-	                var pre = this.mem.sp;
-	                this.mem.sp = pre + 1;
-	                return pre;
-            	} else {
-	                var output = ((this.mem.sp - 1) & this.maxValue);
-	                this.mem.sp = output;
-	                return output;
-            	}
+                if(a) {
+                    var pre = this.mem.sp;
+                    this.mem.sp = (pre + 1) & this.maxValue;
+                    return pre;
+                } else {
+                    var output = ((this.mem.sp - 1) & this.maxValue);
+                    this.mem.sp = output;
+                    return output;
+                }
             case 0x19:
                 return this.mem.sp;
-
-			case 0x1a:
-				return (this.nextWord() + this.mem.sp) & 0xffff;
 
             // other registers
             case 0x1b:
@@ -215,17 +221,17 @@ CPU.prototype = {
             if(key & root.FLAG_LITERAL) return key ^ root.FLAG_LITERAL;
             key &= this.maxValue;
         } else if(key === 'pop') {
-        	key = this.mem.sp;
-        	this.mem.sp = ((key + 1) & this.maxValue);
+            key = this.mem.sp;
+            this.mem.sp = ((key + 1) & this.maxValue);
         }
 
-		for(var i = 0; i < this._getListeners.length; i++) {
-			var listener = this._getListeners[i];
-			if(key >= listener.address && key < listener.address + listener.length) {
-				var value = listener.callback(key - listener.address);
-				if(value) return value;
-			}
-		}
+        for(var i = 0; i < this._getListeners.length; i++) {
+            var listener = this._getListeners[i];
+            if(key >= listener.address && key < listener.address + listener.length) {
+                var value = listener.callback(key - listener.address);
+                if(value || value === 0) return value;
+            }
+        }
 
         return this.mem[key];
     },
@@ -236,24 +242,26 @@ CPU.prototype = {
             if (key & root.FLAG_LITERAL) return;
             key &= this.maxValue;
         } else if(key === 'push') {
-        	this.mem.sp = (this.mem.sp - 1 & this.maxValue);
+            this.mem.sp = (this.mem.sp - 1 & this.maxValue);
             key = this.mem.sp;
         }
         value &= this.maxValue;
         
         for(var i = 0; i < this._setListeners.length; i++) {
-			var listener = this._setListeners[i];
-			if(key >= listener.address && key < listener.address + listener.length) {
-				if(listener.callback(key - listener.address, value) === true) return;
-			}
-		}
+            var listener = this._setListeners[i];
+            if(key >= listener.address && key < listener.address + listener.length) {
+                if(listener.callback(key - listener.address, value) === true) return;
+            }
+        }
 
         this.mem[key] = value;
     },
     skip: function() {
-    	var sp = this.mem.sp;
-    	this.nextInstruction();
-    	this.mem.sp = sp;
+        var cycle = this.cycle;
+        var sp = this.mem.sp;
+        this.nextInstruction();
+        this.mem.sp = sp;
+        this.cycle = cycle + 1;
     },
     skipUntilNonif: function() {
         // pc is at the instruction following our failed if, so:
@@ -266,302 +274,298 @@ CPU.prototype = {
         this.skip();
     },
     step: function() {
-    	if(!this.paused) {
-	    	if(this._triggerInterrupts && this._interruptQueue.length > 0) {
-	    		this.trigger(this._interruptQueue.shift());
-	    	}
-	    	
-	        var insn, aVal, bVal, result;
-	
-	        // Fetch the instruction
-	        insn = this.nextInstruction();
-	        if(root.OPCODES[insn.opcode] === undefined) {
-	        	this.stop();
-	        	this.end();
-	        	throw new Error('Encountered invalid opcode 0x' + insn.opcode.toString(16));
-	        }
-	        
-	        this.cycle += (root.OPCODES[insn.opcode].cost - 1) || 0;
-	        
-	        // Read the arguments
-	        aVal = this.get(insn.a);
-	        if(insn.opcode !== 0) {
-	            bVal = this.get(insn.b);
-	        }
-	
-	        switch (insn.opcode) {
-	        	// null
-	        	case 0x0:
-	        		this.stop();
-	        		break;        	
-	        	
-	            // SET
-	            case 0x1:
-	                this.set(insn.b, aVal);
-	                break;
-	
-	            // ADD
-	            case 0x2:
-	                result = bVal + aVal;
-	                this.set('ex', (result > this.maxValue) ? 0x0001 : 0x0000);
-	                this.set(insn.b, result);
-	                break;
-	
-	            // SUB
-	            case 0x3:
-	                result = bVal - aVal;
-	                this.set('ex', (result < 0) ? this.maxValue : 0x0000);
-	                this.set(insn.b, result);
-	                break;
-	
-	            // MUL
-	            case 0x4:
-	                result = bVal * aVal;
-	                this.set('ex', result >> 16);
-	                this.set(insn.b, result);
-	                break;
-	                
-	            // MLI
-	           	case 0x5:
-	           		result = root.getSigned(bVal) * root.getSigned(aVal);
-	                this.set('ex', result >> 16);
-	                this.set(insn.b, result);
-	                break;
-	
-	            // DIV
-	            case 0x6:
-	                if(aVal === 0) {
-	                    this.set(insn.b, 0x0000);
-	                    this.set('ex', 0x0000);
-	                } else {
-	                    this.set('ex', (bVal << 16) / aVal);
-	                    this.set(insn.b, Math.floor(bVal / aVal));
-	                }
-	                break;
-				     
-				// DVI
-	           	case 0x7:
-	                if(aVal === 0) {
-	                    this.set(insn.b, 0x0000);
-	                    this.set('ex', 0x0000);
-	                } else {
-	                    this.set('ex', (root.getSigned(bVal) << 16) / root.getSigned(aVal));
-	                    this.set(insn.b, Math.floor(root.getSigned(bVal) / root.getSigned(aVal)));
-	                }
-	                break;
-	           
-	            // MOD
-	            case 0x8:
-	                this.set(insn.b, (aVal === 0) ? 0x0000 : bVal % aVal);
-	                break;
-	                
-	            // MDI
-	            case 0x9:
-	            	this.set(insn.b, (aVal === 0) ? 0x0000 : root.getSigned(bVal) % root.getSigned(aVal));
-	            	break;
-	           		
-	            // AND
-	            case 0xa:
-	                this.set(insn.b, bVal & aVal);
-	                break;
-	
-	            // BOR
-	            case 0xb:
-	                this.set(insn.b, bVal | aVal);
-	                break;
-	
-	            // XOR
-	            case 0xc:
-	                this.set(insn.b, bVal ^ aVal);
-	                break;
-	
-	            // SHR
-	            case 0xd:
-	                this.set('ex', (bVal << 16) >> aVal);
-	                this.set(insn.b, bVal >>> aVal);
-	                break;
-	            
-	            // ASR
-	            case 0xe:
-	                this.set('ex', (root.getSigned(bVal) << 16) >>> aVal);
-	                this.set(insn.b, root.getSigned(bVal) >> aVal);
-	                break;
-	                
-	            // SHL
-	            case 0xf:
-	                this.set('ex', (bVal << aVal) >> 16);
-	                this.set(insn.b, bVal << aVal);
-	                break;
-	
-	            // IFB
-	            case 0x10:
-	                if((bVal & aVal) === 0) {
-	                    this.skipUntilNonif();
-	                    this.cycle += 1;
-	                }
-	                break;
-	            
-	            // IFC
-	            case 0x11:
-	            	if(bVal & aVal) {
-	            		this.skipUntilNonif();
-	                    this.cycle += 1;
-	                }
-	            	break;
-	               
-	            // IFE
-	            case 0x12:
-	                if(bVal !== aVal) {
-	                    this.skipUntilNonif();
-	                    this.cycle += 1;
-	                }
-	                break;
-	
-	            // IFN
-	            case 0x13:
-	                if(bVal === aVal) {
-	                    this.skipUntilNonif();
-	                    this.cycle += 1;
-	                }
-	                break;
-	
-	            // IFG
-	            case 0x14:
-	                if(bVal <= aVal) {
-	                    this.skipUntilNonif();
-	                    this.cycle += 1;
-	                }
-	                break;
-	            
-	            // IFA
-	            case 0x15:
-	            	if(root.getSigned(bVal) <= root.getSigned(aVal)) {
-	                    this.skipUntilNonif();
-	                    this.cycle += 1;
-	                }
-	            	break;
-	            
-	            // IFL
-	            case 0x16:
-	            	if(bVal >= aVal) {
-	                    this.skipUntilNonif();
-	                    this.cycle += 1;
-	                }
-	            	break;
-	            
-	            // IFU
-	            case 0x17:
-	            	if(root.getSigned(bVal) >= root.getSigned(aVal)) {
-	            		this.skipUntilNonif();
-	                    this.cycle += 1;
-	                }
-	            	break;
-	            	
-	            // ADX
-	            case 0x1a:
-	            	var value = bVal + aVal + this.mem.ex;
-	            	if(value > this.maxValue) this.mem.ex = 1;
-	            	else this.mem.ex = 0;
-	            	this.set(insn.b, value);
-	            	break;
-	            	
-	            // SBX
-	            case 0x1b:
-	            	var value = bVal - aVal + this.mem.ex;
-	            	if(value < 0) this.set('ex', 0xffff);
-	            	else this.set('ex', 1);
-	            	this.set(insn.b, value);
-	            	break;
-	                
-	            // STI
-	            case 0x1e:
-	            	this.set(insn.b, aVal);
-	            	this.set('i', this.get('i') + 1);
-	            	this.set('j', this.get('j') + 1);
-	            	break;
-	                
-	            // STD
-	            case 0x1f:
-	            	this.set(insn.b, aVal);
-	            	this.set('i', this.get('i') - 1);
-	            	this.set('j', this.get('j') - 1);
-	            	break;
-	
-	            // JSR
-	            case 0x20:
-	            	this.set('push', this.get('pc'));
-	                this.set('pc', aVal);
-	                break;
-	
-	            // BRK (non-standard)
-	            case 0x40:
-	                this.stop();
-	                break;
-	                
-	            // HCF
-	            case 0xe0:
-	            	this.stop();
-	            	this.end();
-	            	this.clear();
-	            	break;
-	            
-	            // INT
-	            case 0x100:
-			    	this.interrupt(aVal);
-	            	break;
-	            
-	            // IAG
-	            case 0x120:
-	            	this.set(this.get(aVal), this.mem.ia);
-	            	break;
-	            
-	            // IAS
-	            case 0x140:
-			    	this.set('ia', aVal);
-	            	break;
-	            
-	            // RFI
-	            case 0x160:
-	            	this._triggerInterrupts = true;
-	            	this.set('a', this.get('pop'));
-	            	this.set('pc', this.get('pop'));
-	            	break;
-	            
-	            // IAQ
-	            case 0x180:
-			    	if(aVal) this._triggerInterrupts = false;
-			    	else this._triggerInterrupts = true;
-	            	break;
-	            
-	            // HWN
-	            case 0x200:
-	            	this.set(insn.a, this._devices.length);
-	            	break;
-	            
-	            // HWQ
-	            case 0x220:
-	            	if(this._devices[aVal]) {
-	            		this.mem.b = (this._devices[aVal].id >> 16);
-	            		this.mem.a = (this._devices[aVal].id & 0xffff);
-	            		this.mem.c = this._devices[aVal].version;
-	            		this.mem.y = (this._devices[aVal].manufacturer >> 16);
-	            		this.mem.x = (this._devices[aVal].manufacturer & 0xffff);
-	            	} else {
-	            		this.mem.b = 0;
-	            		this.mem.a = 0;
-	            		this.mem.c = 0;
-	            		this.mem.y = 0;
-	            		this.mem.x = 0;
-	            	}
-	            	break;
-	            
-	            // HWI
-	            case 0x240:
-	            	if(this._devices[aVal] && this._devices[aVal].onInterrupt) {
-	            		this.paused = this._devices[aVal].onInterrupt(function(){ this.paused = false; }.bind(this));
-	            	}
-	            	break;
-	        }
+        if(!this.paused) {
+            if (this._justReturnedFromInterrupt) {
+                this._justReturnedFromInterrupt = false;
+            } else if (this._triggerInterrupts && this._interruptQueue.length > 0) {
+            this.trigger(this._interruptQueue.shift());
+        }
+            
+            var insn, aVal, bVal, result;
+    
+            // Fetch the instruction
+            insn = this.nextInstruction();
+            if(root.OPCODES[insn.opcode] === undefined) {
+                this.stop();
+                this.end();
+                throw new Error('Encountered invalid opcode 0x' + insn.opcode.toString(16));
+            }
+            
+            this.cycle += (root.OPCODES[insn.opcode].cost - 1) || 0;
+            
+            // Read the arguments
+            aVal = this.get(insn.a);
+            if(insn.b !== undefined) {
+                bVal = this.get(insn.b);
+            }
+    
+            switch (insn.opcode) {
+                // null
+                case 0x0:
+                    this.stop();
+                    break;          
+                
+                // SET
+                case 0x1:
+                    this.set(insn.b, aVal);
+                    break;
+    
+                // ADD
+                case 0x2:
+                    result = bVal + aVal;
+                    this.set('ex', (result > this.maxValue) ? 0x0001 : 0x0000);
+                    this.set(insn.b, result);
+                    break;
+    
+                // SUB
+                case 0x3:
+                    result = bVal - aVal;
+                    this.set('ex', (result < 0) ? this.maxValue : 0x0000);
+                    this.set(insn.b, result);
+                    break;
+    
+                // MUL
+                case 0x4:
+                    result = bVal * aVal;
+                    this.set('ex', result >> 16);
+                    this.set(insn.b, result);
+                    break;
+                    
+                // MLI
+                case 0x5:
+                    result = root.getSigned(bVal) * root.getSigned(aVal);
+                    this.set('ex', result >> 16);
+                    this.set(insn.b, result);
+                    break;
+    
+                // DIV
+                case 0x6:
+                    if(aVal === 0) {
+                        this.set(insn.b, 0x0000);
+                        this.set('ex', 0x0000);
+                    } else {
+                        this.set('ex', (bVal * 0x10000) / aVal);
+                        this.set(insn.b, Math.floor(bVal / aVal));
+                    }
+                    break;
+                     
+                // DVI
+                case 0x7:
+                    if(aVal === 0) {
+                        this.set(insn.b, 0x0000);
+                        this.set('ex', 0x0000);
+                    } else {
+                        this.set('ex', (root.getSigned(bVal) << 16) / root.getSigned(aVal));
+                            var quotient = root.getSigned(bVal) / root.getSigned(aVal);
+                        this.set(insn.b, roundTowardsZero(quotient));
+                    }
+                    break;
+               
+                // MOD
+                case 0x8:
+                    this.set(insn.b, (aVal === 0) ? 0x0000 : bVal % aVal);
+                    break;
+                    
+                // MDI
+                case 0x9:
+                    this.set(insn.b, (aVal === 0) ? 0x0000 : root.getSigned(bVal) % root.getSigned(aVal));
+                    break;
+                    
+                // AND
+                case 0xa:
+                    this.set(insn.b, bVal & aVal);
+                    break;
+    
+                // BOR
+                case 0xb:
+                    this.set(insn.b, bVal | aVal);
+                    break;
+    
+                // XOR
+                case 0xc:
+                    this.set(insn.b, bVal ^ aVal);
+                    break;
+    
+                // SHR
+                case 0xd:
+                    this.set('ex', (bVal << 16) >> aVal);
+                    this.set(insn.b, bVal >>> aVal);
+                    break;
+                
+                // ASR
+                case 0xe:
+                    this.set('ex', (root.getSigned(bVal) << 16) >>> aVal);
+                    this.set(insn.b, root.getSigned(bVal) >> aVal);
+                    break;
+                    
+                // SHL
+                case 0xf:
+                    this.set('ex', (bVal << aVal) >> 16);
+                    this.set(insn.b, bVal << aVal);
+                    break;
+    
+                // IFB
+                case 0x10:
+                    if((bVal & aVal) === 0) {
+                        this.skipUntilNonif();
+                    }
+                    break;
+                
+                // IFC
+                case 0x11:
+                    if(bVal & aVal) {
+                        this.skipUntilNonif();
+                    }
+                    break;
+                   
+                // IFE
+                case 0x12:
+                    if(bVal !== aVal) {
+                        this.skipUntilNonif();
+                    }
+                    break;
+    
+                // IFN
+                case 0x13:
+                    if(bVal === aVal) {
+                        this.skipUntilNonif();
+                    }
+                    break;
+    
+                // IFG
+                case 0x14:
+                    if(bVal <= aVal) {
+                        this.skipUntilNonif();
+                    }
+                    break;
+                
+                // IFA
+                case 0x15:
+                    if(root.getSigned(bVal) <= root.getSigned(aVal)) {
+                        this.skipUntilNonif();
+                    }
+                    break;
+                
+                // IFL
+                case 0x16:
+                    if(bVal >= aVal) {
+                        this.skipUntilNonif();
+                    }
+                    break;
+                
+                // IFU
+                case 0x17:
+                    if(root.getSigned(bVal) >= root.getSigned(aVal)) {
+                        this.skipUntilNonif();
+                    }
+                    break;
+                    
+                // ADX
+                case 0x1a:
+                    var value = bVal + aVal + this.mem.ex;
+                    if(value > this.maxValue) this.mem.ex = 1;
+                    else this.mem.ex = 0;
+                    this.set(insn.b, value);
+                    break;
+                    
+                // SBX
+                case 0x1b:
+                    var value = bVal - aVal + root.getSigned(this.mem.ex);
+                    if(value < 0) this.set('ex', 0xffff);
+                    else this.set('ex', 0);
+                    this.set(insn.b, value);
+                    break;
+                    
+                // STI
+                case 0x1e:
+                    this.set(insn.b, aVal);
+                    this.set('i', this.get('i') + 1);
+                    this.set('j', this.get('j') + 1);
+                    break;
+                    
+                // STD
+                case 0x1f:
+                    this.set(insn.b, aVal);
+                    this.set('i', this.get('i') - 1);
+                    this.set('j', this.get('j') - 1);
+                    break;
+    
+                // JSR
+                case 0x20:
+                    this.set('push', this.get('pc'));
+                    this.set('pc', aVal);
+                    break;
+    
+                // BRK (non-standard)
+                case 0x40:
+                    this.stop();
+                    break;
+                    
+                // HCF
+                case 0xe0:
+                    this.stop();
+                    this.end();
+                    this.clear();
+                    break;
+                
+                // INT
+                case 0x100:
+                    this.interrupt(aVal);
+                    break;
+                
+                // IAG
+                case 0x120:
+                    this.set(insn.a, this.mem.ia);
+                    break;
+                
+                // IAS
+                case 0x140:
+                    this.set('ia', aVal);
+                    break;
+                
+                // RFI
+                case 0x160:
+                    this._triggerInterrupts = true;
+                    this.set('a', this.get('pop'));
+                    this.set('pc', this.get('pop'));
+                        this._justReturnedFromInterrupt = true;
+                    break;
+                
+                // IAQ
+                case 0x180:
+                    if(aVal) this._triggerInterrupts = false;
+                    else this._triggerInterrupts = true;
+                    break;
+                
+                // HWN
+                case 0x200:
+                    this.set(insn.a, this._devices.length);
+                    break;
+                
+                // HWQ
+                case 0x220:
+                    if(this._devices[aVal]) {
+                        this.mem.b = (this._devices[aVal].id >> 16);
+                        this.mem.a = (this._devices[aVal].id & 0xffff);
+                        this.mem.c = this._devices[aVal].version;
+                        this.mem.y = (this._devices[aVal].manufacturer >> 16);
+                        this.mem.x = (this._devices[aVal].manufacturer & 0xffff);
+                    } else {
+                        this.mem.b = 0;
+                        this.mem.a = 0;
+                        this.mem.c = 0;
+                        this.mem.y = 0;
+                        this.mem.x = 0;
+                    }
+                    break;
+                
+                // HWI
+                case 0x240:
+                    if(this._devices[aVal] && this._devices[aVal].onInterrupt) {
+                        this.paused = this._devices[aVal].onInterrupt(function(){ this.paused = false; }.bind(this));
+                    }
+                    break;
+            }
         }
     },
     load: function(binary, origin) {
@@ -632,38 +636,42 @@ CPU.prototype = {
         this.cycle = 0;
         
         this._interruptQueue = [];
-    	this._triggerInterrupts = true;
+        this._triggerInterrupts = true;
 
         this.running = false;
 
         this.timer = 0;
     },
     addDevice: function(device) {
-    	if(device && this._devices.length < 65536
-    	&& typeof device.id !== 'undefined'
-    	&& typeof device.version !== 'undefined'
-    	&& typeof device.manufacturer !== 'undefined') {
-        	this._devices.push(device);
-        	if(typeof device.onConnect === 'function') device.onConnect(this);
-    	}
+        if(device && this._devices.length < 65536
+        && typeof device.id !== 'undefined'
+        && typeof device.version !== 'undefined'
+        && typeof device.manufacturer !== 'undefined') {
+            this._devices.push(device);
+            if(typeof device.onConnect === 'function') device.onConnect(this);
+        }
     },
     interrupt: function(message) {
-    	this.cycle += 4;
-    	
-    	if(!this.triggerInterrupts) {
-    		this._interruptQueue.push(message);
-    	} else {
-	    	if(this.mem.ia !== 0) {
-	    		this.trigger(message);
-			}
-		}
+        if(!this._triggerInterrupts) {
+            if (this._interruptQueue.length >= 256) {
+            this.stop();
+            this.end();
+            throw new Error("DCPU-16 caught fire because of overfull interrupt queue");
+            } else {
+                this._interruptQueue.push(message);
+            }
+        } else {
+        this.trigger(message);
+    }
     },
     trigger: function(message) {
-    	this._triggerInterrupts = false;
-	    this.set('push', this.mem.pc);
-	    this.set('push', this.mem.a);
-	    this.set('pc', this.mem.ia);
-	    this.set('a', message);
+    if (this.mem.ia !== 0) {
+            this._triggerInterrupts = false;
+        this.set('push', this.mem.pc);
+        this.set('push', this.mem.a);
+        this.set('pc', this.mem.ia);
+        this.set('a', message);
+        }
     },
     end: function() {
         for(var i = 0; i < this._endListeners.length; i++) {
@@ -677,34 +685,35 @@ CPU.prototype = {
         this._endListeners.push(callback);
     },
     onGet: function(address, length, callback) {
-    	if(typeof length === 'function') {
-    		callback = length;
-    		length = 1;
-    	}
-    	
-    	var listener = {
-        	address: address,
-        	length: length,
-        	callback: callback
+        if(typeof length === 'function') {
+            callback = length;
+            length = 1;
+        }
+        
+        var listener = {
+            address: address,
+            length: length,
+            callback: callback
         };
         this._getListeners.push(listener);
         return listener;
     },
     onSet: function(address, length, callback) {
-    	if(typeof length === 'function') {
-    		callback = length;
-    		length = 1;
-    	}
-    	
+        if(typeof length === 'function') {
+            callback = length;
+            length = 1;
+        }
+        
         var listener = {
-        	address: address,
-        	length: length,
-        	callback: callback
+            address: address,
+            length: length,
+            callback: callback
         };
         this._setListeners.push(listener);
         return listener;
     },
     getDump: function() {
+        var formatWord = root.formatWord;
         var output = '', populated, i, j;
         output += '==== REGISTERS: ====\n';
         output += 'A:  ' + formatWord(this.mem.a) + '\n';

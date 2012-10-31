@@ -295,7 +295,7 @@
             defaultFont = font;
         };
         fontImage.src = image;
-    };
+    };  
 
     LEM1802.prototype.onDraw = function(listener) {
         this._drawListeners.push(listener);
