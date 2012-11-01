@@ -61,6 +61,10 @@ $(function() {
     var keyboard = new Keyboard();
     devices.push(keyboard);
 
+    var drive = new M35FD();
+    devices.push(drive);
+    drive.insert(new Disk());
+
     var sped = new SPED3(document.getElementById('sped3'));
     var onDraw = function() {
         if(!spedClicked && $('#sped3').css('display') === 'none') {
