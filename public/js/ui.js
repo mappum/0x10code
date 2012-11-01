@@ -55,48 +55,8 @@ $(function() {
     };
     screen.onDraw(onScreenDraw);
     
-    var tickRate = 0, clockInterrupt = 0, clockTicks = 0;
-    var clock = {
-        id: 0x12d0b402,
-        version: 0,
-        manufacturer: 0,
-        onInterrupt: function() {
-            switch(cpu.mem.a) {
-                case 0:
-                    if(cpu.mem.b) {
-                        clockTicks = 0;
-                        tickRate = cpu.mem.b;
-                        if(!clockTicking) clockTick();
-                    } else {
-                        tickRate = 0;
-                    }
-                    break;
-                    
-                case 1:
-                    cpu.mem.c = clockTicks;
-                    break;
-                
-                case 2:
-                    clockInterrupt = cpu.mem.b;
-                    break;
-            }
-        }
-    };
+    var clock = new Clock();
     devices.push(clock);
-    
-    var clockTicking = false, tickRate = 1;
-    function clockTick() {
-        clockTicking = true;
-        
-        if(clockInterrupt) {
-            cpu.interrupt(clockInterrupt);
-        }
-        
-        clockTicks++;
-        
-        if(tickRate) setTimeout(clockTick, 1000 / (60 / tickRate));
-        else clockTicking = false;
-    }
 
     var keyboard = new Keyboard();
     devices.push(keyboard);
@@ -150,13 +110,7 @@ $(function() {
         $('#step').removeClass('disabled');
         $('#run').removeClass('disabled');
         $('#reset').removeClass('disabled');
-        cpu.clear();
-        screen.clear();
-        sped.reset();
-        
-        keyInterrupts = false;
-        keyboardBuffer = [];
-        keysDown = [];
+        cpu.reset();
         
         editor.setLineClass(pcLine, null, null);
         editor.setLineClass(errorLine, null, null);
