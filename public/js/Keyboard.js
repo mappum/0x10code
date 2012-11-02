@@ -39,7 +39,7 @@
                 this.buffer.push(key);
                 this.keyEvent(key);
                 
-                if(e.which >= 37 && e.which <= 40 || e.which === 8) e.preventDefault();
+                if(e.which >= 37 && e.which <= 40 || e.which === 8 || e.which >= 128) e.preventDefault();
             }
         }.bind(this));
         
