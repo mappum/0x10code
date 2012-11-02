@@ -9,15 +9,12 @@
         37: 0x82,
         39: 0x83,
         16: 0x90,
-        17: 0x91
+        17: 0x91,
+        128: 0x80,
+        129: 0x81,
+        130: 0x82,
+        131: 0x83
     };
-
-    var pressListeners = [
-        0x10,
-        0x11,
-        0x12,
-        0x13
-    ];
 
     function Keyboard(container) {
         this.id = 0x30cf7406;
@@ -39,7 +36,7 @@
                 var key = keyMap[e.which] || e.which;
                 this.keysDown[key] = Date.now();
                 
-                if(pressListeners.indexOf(key) !== -1) this.buffer.push(key);
+                this.buffer.push(key);
                 this.keyEvent(key);
                 
                 if(e.which >= 37 && e.which <= 40 || e.which === 8) e.preventDefault();
