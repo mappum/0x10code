@@ -1,6 +1,6 @@
 {
   "name": "0x10code",
-  "version": "0.0.2-2",
+  "version": "0.0.2-3",
   "dependencies": {
     "express": "2.5.9",
     "express-pagination": "*",

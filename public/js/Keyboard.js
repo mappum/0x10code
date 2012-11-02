@@ -15,6 +15,16 @@
         130: 0x82,
         131: 0x83
     };
+    var pressListeners = [
+        0x10,
+        0x11,
+        0x12,
+        0x13,
+        0x80,
+        0x81,
+        0x82,
+        0x83
+    ];
 
     function Keyboard(container) {
         this.id = 0x30cf7406;
@@ -23,7 +33,7 @@
 
         this.buffer = [];
         this.keysDown = [];
-        this.keyInterrupts = 0;
+        this.keyInterrupt = 0;
 
         this.pressLoop = this.pressLoop.bind(this);
     }
@@ -80,15 +90,15 @@
                 break;
                 
             case 3:
-                this.keyInterrupts = this.cpu.mem.b;
+                this.keyInterrupt = this.cpu.mem.b;
                 break;
         }
         callback();
     };
 
     Keyboard.prototype.keyEvent = function(key) {
-        if(this.keyInterrupts) {
-            this.cpu.interrupt(keyInterrupts);
+        if(this.keyInterrupt) {
+            this.cpu.interrupt(this.keyInterrupt);
         }
     };
 
