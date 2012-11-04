@@ -9,11 +9,7 @@
         37: 0x82,
         39: 0x83,
         16: 0x90,
-        17: 0x91,
-        128: 0x80,
-        129: 0x81,
-        130: 0x82,
-        131: 0x83
+        17: 0x91
     };
     var pressListeners = [
         0x10,
@@ -44,10 +40,13 @@
         $(document).keydown(function(e) {
             if(this.cpu.running && e.target.nodeName !== 'INPUT' && e.target.nodeName !== 'TEXTAREA') {
                 var key = keyMap[e.which] || e.which;
+
                 this.keysDown[key] = Date.now();
                 
-                this.buffer.push(key);
-                this.keyEvent(key);
+                if(key < 65 || key > 90) {
+                    this.buffer.push(key);
+                    this.keyEvent(key);
+                }
                 
                 if(e.which >= 37 && e.which <= 40 || e.which === 8 || e.which >= 128) e.preventDefault();
             }
