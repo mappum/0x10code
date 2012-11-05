@@ -13,7 +13,7 @@ CodeMirror.defineMode("dcpu", function(config, parserConfig)
 		"mdi":true, "asr":true, "ifc":true, "ifa":true, "ifl":true, 
 		"ifu":true, "adx":true, "sbx":true, "sti":true, "std":true, 
 		"int":true, "iag":true, "ias":true, "rfi":true, "iag":true, 
-		"hwn":true, "hwg":true, "hwi":true
+		"hwn":true, "hwq":true, "hwi":true. "iaq":true
 	};
 
 	var isOperatorChar = /[+\-:]/;
