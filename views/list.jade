@@ -10,5 +10,5 @@ append content
             small #{posts[i].author}
           span
             strong Views: 
-            span #{posts[i].views}
+            span #{posts[i].viewers.length}
   != paginate(count, resultsPerPage, currentPage)

@@ -9,7 +9,7 @@ append top
   blockquote!= md(escape(description))
   p
     strong Views: 
-    span #{views}
+    span #{viewers.length}
     span &nbsp;-&nbsp;
     strong Submitted: 
     span= moment(date).fromNow()
