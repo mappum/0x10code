@@ -1,4 +1,7 @@
 $(function() {
+    var editor_updated = true;
+    var initial_mem = [];
+
     var hlLine = 0;
     var editor = window.editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
         lineNumbers: true,
@@ -28,6 +31,9 @@ $(function() {
             $('#debug').removeClass('disabled');
             $('#step').removeClass('disabled');
         },
+	onChange: function() {
+            editor_updated = true;
+        },
         onCursorActivity: function() {
             if(!editor.getOption('readOnly')) {
                 editor.setLineClass(hlLine, null, null);
@@ -39,7 +45,7 @@ $(function() {
     
     $('#savePanel').on('show', function(){ $(this).show(); });
     $('#savePanel').on('hidden', function(){ $(this).fadeOut(); });
-    
+
     var cpu = new DCPU16.CPU(), assembler, notRun = false;
     var instructionMap = [], addressMap = [];
     var devices = [];
@@ -83,50 +89,62 @@ $(function() {
     }
     
     function compile() {
-        $('#error').hide();
-        editor.setLineClass(errorLine, null, null);
+	if(editor_updated) {
+            editor_updated = false;
 
-        var code = editor.getValue();
-        reset();
-	switch($("#assembler").val()) {
-            case "0x10code":
-                assembler = new DCPU16.Assembler(cpu);
-                try {
-                    assembler.compile(code);
-                    addressMap = assembler.addressMap;
-                    instructionMap = assembler.instructionMap;
-                    notRun = true;
-                    return true;
-                } catch(e) {
-                    $('#error strong').text('Assembler error: ');
-                    $('#error span').text(e.message);
+            $('#error').hide();
+            editor.setLineClass(errorLine, null, null);
 
+            var code = editor.getValue();
+            reset();
+            switch($("#assembler").val()) {
+                case "0x10code":
+                    assembler = new DCPU16.Assembler(cpu);
                     try {
-                        errorLine = editor.setLineClass(assembler.instructionMap[assembler.instruction - 1] - 1, null, 'errorLine');
-                    } catch(e) {}
+                        assembler.compile(code);
+                        addressMap = assembler.addressMap;
+                        instructionMap = assembler.instructionMap;
+                        notRun = true;
+			initial_mem = cpu.mem.slice();
+                        return true;
+                    } catch(e) {
+                        $('#error strong').text('Assembler error: ');
+                        $('#error span').text(e.message);
 
-                    $('#error').show();
-                    return false;
-                }
-		break;
-            case "dcputoolchain":
-		var data = {
-			assembler: 'dcputoolchain',
-			file:       code
-		};
-		$.ajax({
-			type: 'POST',
-			url:  '/assemble',
-			data: data,
-			success: function(binary){
-				for(i = 0; i < binary.bytes.length; i++) {
-					cpu.mem[i] = binary.bytes[i];
-				}
-			},
-			dataType: 'json',
-			async: false
-			});
-		break;
+                        try {
+                            errorLine = editor.setLineClass(assembler.instructionMap[assembler.instruction - 1] - 1, null, 'errorLine');
+                        } catch(e) {}
+
+                        $('#error').show();
+                        return false;
+                    }
+                    break;
+                case "dcputoolchain":
+                    var data = {
+                        assembler: 'dcputoolchain',
+                        file:       code
+                    };
+                    $.ajax({
+                        type: 'POST',
+                        url:  '/assemble',
+                        data: data,
+                        success: function(binary){
+                            for(i = 0; i < binary.bytes.length; i++) {
+                                cpu.mem[i] = binary.bytes[i];
+                            }
+			    initial_mem = binary.bytes.slice();
+                        },
+                        dataType: 'json',
+                        async: false
+                    });
+                    return true;
+                    break;
+            }
+	} else {
+	    for(i = 0; i < initial_mem.length; i++) {
+                cpu.mem[i] = initial_mem[i];
+	    }
+	    return true;
 	}
     }
 
@@ -261,6 +279,10 @@ $(function() {
             stepped = true;
             drawDebug();
         }
+    });
+
+    $('#assembler').change(function() {
+        editor_updated = true;
     });
     
     $('#info').click(function() {
