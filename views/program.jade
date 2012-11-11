@@ -34,6 +34,10 @@ append right
         button#debug.btn.btn-danger(data-toggle="button")
           i#debugIcon.icon-chevron-down.icon-white
           span Debug
+      form.form-inline
+        select#assembler
+          option(value='0x10code') 0x10code
+          option(value='dcputoolchain') DCPU Toolchain
     div#debugger.collapse.accordion-group.inset
       div.margined
         div.btn-group
