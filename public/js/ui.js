@@ -88,24 +88,46 @@ $(function() {
 
         var code = editor.getValue();
         reset();
-        assembler = new DCPU16.Assembler(cpu);
-        try {
-            assembler.compile(code);
-            addressMap = assembler.addressMap;
-            instructionMap = assembler.instructionMap;
-            notRun = true;
-            return true;
-        } catch(e) {
-            $('#error strong').text('Assembler error: ');
-            $('#error span').text(e.message);
+	switch($("#assembler").val()) {
+            case "0x10code":
+                assembler = new DCPU16.Assembler(cpu);
+                try {
+                    assembler.compile(code);
+                    addressMap = assembler.addressMap;
+                    instructionMap = assembler.instructionMap;
+                    notRun = true;
+                    return true;
+                } catch(e) {
+                    $('#error strong').text('Assembler error: ');
+                    $('#error span').text(e.message);
 
-            try {
-                errorLine = editor.setLineClass(assembler.instructionMap[assembler.instruction - 1] - 1, null, 'errorLine');
-            } catch(e) {}
+                    try {
+                        errorLine = editor.setLineClass(assembler.instructionMap[assembler.instruction - 1] - 1, null, 'errorLine');
+                    } catch(e) {}
 
-            $('#error').show();
-            return false;
-        }
+                    $('#error').show();
+                    return false;
+                }
+		break;
+            case "dcputoolchain":
+		var data = {
+			assembler: 'dcputoolchain',
+			file:       code
+		};
+		$.ajax({
+			type: 'POST',
+			url:  '/assemble',
+			data: data,
+			success: function(binary){
+				for(i = 0; i < binary.bytes.length; i++) {
+					cpu.mem[i] = binary.bytes[i];
+				}
+			},
+			dataType: 'json',
+			async: false
+			});
+		break;
+	}
     }
 
     function reset() {
