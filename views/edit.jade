@@ -10,6 +10,13 @@ append top
     button#info.btn.btn-info(data-toggle="button")
       i.icon-chevron-down.icon-white
       span Post Options
+    button.btn.btn-info(data-toggle="dropdown")
+      i.icon-list.icon-white
+      span#assembler-btn 0x10code
+      ul.dropdown-menu.pull-right(role="menu")
+        li
+          a#0x10code(tabindex=-1, href="#") 0x10code
+          a#dcputoolchain(tabindex=-1, href="#") DCPU-16 Toolchain
     button#save.btn.btn-info
       i.icon-share.icon-white
       span Post

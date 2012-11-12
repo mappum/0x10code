@@ -36,4 +36,5 @@ append scripts
   script(type="text/javascript").
     $(function() {
       window.editor.setOption('readOnly', true);
+      window.editor.setAssemblerOption("#{toolchain}");
     });

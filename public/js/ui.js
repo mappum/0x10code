@@ -43,6 +43,9 @@ $(function() {
             }
         }
     });
+    editor.setAssemblerOption = function(v) {
+        assembler = v;
+    }
     $('.CodeMirror').addClass('inset');
     
     $('#savePanel').on('show', function(){ $(this).show(); });
@@ -103,11 +106,11 @@ $(function() {
             switch(assembler) {
                 case "0x10code":
                     console.log("Assembling with 0x10code");
-                    assembler = new DCPU16.Assembler(cpu);
+                    var assembler_inst = new DCPU16.Assembler(cpu);
                     try {
-                        assembler.compile(code);
-                        addressMap = assembler.addressMap;
-                        instructionMap = assembler.instructionMap;
+                        assembler_inst.compile(code);
+                        addressMap = assembler_inst.addressMap;
+                        instructionMap = assembler_inst.instructionMap;
                         notRun = true;
 			initial_mem = cpu.mem.slice();
                         return true;
@@ -116,7 +119,7 @@ $(function() {
                         $('#error span').text(e.message);
 
                         try {
-                            errorLine = editor.setLineClass(assembler.instructionMap[assembler.instruction - 1] - 1, null, 'errorLine');
+                            errorLine = editor.setLineClass(assembler_inst.instructionMap[assembler_inst.instruction - 1] - 1, null, 'errorLine');
                         } catch(e) {}
 
                         $('#error').show();
@@ -144,6 +147,10 @@ $(function() {
                         async: false
                     });
                     return true;
+                    break;
+                default:
+                    alert("The '" + assembler + "' assembler specified with this post isn't valid!  Changing to 0x10code...");
+                    assembler = "0x10code";
                     break;
             }
 	} else {
@@ -304,6 +311,7 @@ $(function() {
             title: $('#saveTitle').val(),
             author: $('#saveAuthor').val(),
             description: $('#saveDescription').val(),
+            toolchain: assembler,
             password: $('#savePassword').val(),
             code: window.editor.getValue(),
             id: $('#saveId').val()
@@ -325,7 +333,7 @@ $(function() {
     });
 
     $('#dcputoolchain').click(function() {
-        $("#assembler-btn").html("DCPU toolchain");
+        $("#assembler-btn").html("DCPU-16 Toolchain");
         assembler = "dcputoolchain";
         editor_updated = true;
     });

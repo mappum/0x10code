@@ -23,6 +23,7 @@ exports.set = function(data, callback) {
 	program.id = data.id;
 	program.password = data.password;
 	program.fork = data.fork;
+	program.toolchain = data.toolchain;
 	program.save(function(err) {
 		if(callback) callback(err, program);
 	});
