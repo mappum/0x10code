@@ -1,6 +1,6 @@
 {
-  "name": "thatothercode",
-  "version": "0.0.2-29",
+  "name": "0x10code",
+  "version": "0.0.2-4",
   "dependencies": {
     "express": "2.5.9",
     "express-pagination": "*",
@@ -11,11 +11,15 @@
     "markdown": "*",
     "request": "*"
   },
-  "engines": {
-    "node": "0.8.x"
-  },
-  "subdomain": "thatothercode",
+  "subdomain": "0x10code",
+  "domains": [
+    "0x10co.de",
+    "www.0x10co.de"
+  ],
   "scripts": {
     "start": "app.js"
+  },
+  "engines": {
+    "node": "0.8.x"
   }
 }
