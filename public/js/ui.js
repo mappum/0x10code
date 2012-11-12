@@ -2,6 +2,8 @@ $(function() {
     var editor_updated = true;
     var initial_mem = [];
 
+    var assembler = "0x10code";
+
     var hlLine = 0;
     var editor = window.editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
         lineNumbers: true,
@@ -90,6 +92,7 @@ $(function() {
     
     function compile() {
 	if(editor_updated) {
+            console.log("Actually compiling!");
             editor_updated = false;
 
             $('#error').hide();
@@ -97,8 +100,9 @@ $(function() {
 
             var code = editor.getValue();
             reset();
-            switch($("#assembler").val()) {
+            switch(assembler) {
                 case "0x10code":
+                    console.log("Assembling with 0x10code");
                     assembler = new DCPU16.Assembler(cpu);
                     try {
                         assembler.compile(code);
@@ -120,6 +124,7 @@ $(function() {
                     }
                     break;
                 case "dcputoolchain":
+                    console.log("Assembling with dcputoolchain");
                     var data = {
                         assembler: 'dcputoolchain',
                         file:       code
@@ -129,6 +134,7 @@ $(function() {
                         url:  '/assemble',
                         data: data,
                         success: function(binary){
+                            console.log(binary);
                             for(i = 0; i < binary.bytes.length; i++) {
                                 cpu.mem[i] = binary.bytes[i];
                             }
@@ -280,10 +286,6 @@ $(function() {
             drawDebug();
         }
     });
-
-    $('#assembler').change(function() {
-        editor_updated = true;
-    });
     
     $('#info').click(function() {
         if(!$('#info').hasClass('active')) {
@@ -312,5 +314,19 @@ $(function() {
         }, 'text').error(function() {
             $('#saveAlert').show();
         });
+    });
+
+    // Dropdown menu options
+
+    $('#0x10code').click(function() {
+        $("#assembler-btn").html("0x10code");
+        assembler = "0x10code";
+        editor_updated = true;
+    });
+
+    $('#dcputoolchain').click(function() {
+        $("#assembler-btn").html("DCPU toolchain");
+        assembler = "dcputoolchain";
+        editor_updated = true;
     });
 });

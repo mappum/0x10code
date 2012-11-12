@@ -92,6 +92,7 @@ app.post('/assemble', function(req, res) {
 		var post_req = http.request(post_options, function(post_res) {
 			post_res.setEncoding('utf8');
 			post_res.on('data', function(binary) {
+				console.log(binary);
 				res.end(binary);
 			});
 		});
