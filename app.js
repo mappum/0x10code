@@ -13,7 +13,8 @@ var express = require('express'),
 	moment = require('moment'),
 	programDb = require('./controllers/program.js'),
 	config = require('./config.js'),
-	http = require('http');
+	http = require('http'),
+	request = require('request');
 
 mongoose.connect(config.mongoUri);
 
@@ -77,27 +78,9 @@ function renderPaginated(scope, type, res, o, callback) {
 
 app.post('/assemble', function(req, res) {
 	if(req.body.assembler == 'dcputoolchain') {
-		post_data = "file=" + req.body.file;
-		var post_options = {
-			host: 'services.dcputoolcha.in',
-			port: '80',
-			path: '/assemble',
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded',
-				'Content-Length': post_data.length
-			}
-		};
-
-		var post_req = http.request(post_options, function(post_res) {
-			post_res.setEncoding('utf8');
-			post_res.on('data', function(binary) {
-				console.log(binary);
-				res.end(binary);
-			});
-		});
-
-		post_req.write(post_data);
+		request({method: 'POST', url:'http://services.dcputoolcha.in/assemble', form: { 'file': req.body.file }}).pipe(res);
+	} else {
+		res.end();
 	}
 })
 

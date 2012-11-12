@@ -8,7 +8,8 @@
     "node-markdown": "*",
     "moment": "*",
     "jade": "*",
-    "markdown": "*"
+    "markdown": "*",
+    "request": "*"
   },
   "subdomain": "0x10code",
   "domains": [
