@@ -40,8 +40,14 @@ function render(type, res, o, callback) {
 }
 
 function incrementViews(program) {
-	program.views++;
-	program.save();
+	if(program.viewers.indexOf(program.ip) == -1) {
+		program.viewers.push(program.ip);
+		program.save();
+	}
+}
+
+function getIP(req) {
+	return req.ip ? req.ip : req.socket.remoteAddress;
 }
 
 // scope: Mongoose scope representing the collection to paginate
@@ -102,7 +108,7 @@ app.post('/assemble', function(req, res) {
 })
 
 app.get('/top', function(req, res) {
-	var sorted  = programDb.sort('-views', {password: ''});
+	var sorted  = programDb.sort('-viewers', {password: ''});
 	renderPaginated(sorted, 'list', res, {
 		current: 'top',
 		currentPage: req.query.page,
@@ -155,6 +161,8 @@ app.get('/:id', function(req, res) {
 			program.md = md;
 			program.moment = moment;
 
+			program.ip = getIP(req);
+
 			render('noedit', res, program, incrementViews);
 		});
 	});
@@ -174,6 +182,8 @@ app.post('/:id', function(req, res) {
 
 			program.md = md;
 			program.moment = moment;
+
+			program.ip = getIP(req);
 
 			render('noedit', res, program, incrementViews);
 		});

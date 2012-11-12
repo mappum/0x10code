@@ -31,7 +31,7 @@ exports.set = function(data, callback) {
 exports.sort = function(field, params, callback) {
 	params = params || {};
 
-	var fields = {'title': 1, 'author': 1, 'description': 1, 'views': 1, 'id': 1, 'date': 1},
+	var fields = {'title': 1, 'author': 1, 'description': 1, 'viewers': 1, 'id': 1, 'date': 1},
 		scoped = Program.find(params).select(fields).sort(field);
 
 	if(!callback) {

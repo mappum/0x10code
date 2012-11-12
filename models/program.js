@@ -8,7 +8,7 @@ var programSchema = new Schema({
     'description': {'type': String, 'default': ''},
     'date':        {'type': Date,   'default': Date.now},
     'code':        {'type': String},
-    'views':       {'type': Number, 'default': 0},
+    'viewers':     {'type': [String], 'default': []},
     'password':    {'type': String, 'default': ''},
     'fork':        {'type': String, 'default': ''}
 });
