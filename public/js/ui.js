@@ -3,6 +3,7 @@ $(function() {
     var initial_mem = [];
 
     var assembler = "0x10code";
+    var assembler_inst;
 
     var hlLine = 0;
     var editor = window.editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
@@ -35,6 +36,10 @@ $(function() {
         },
 	onChange: function() {
             editor_updated = true;
+            if($('#debug').hasClass('active')) {
+                reset();
+                compile();
+            }
         },
         onCursorActivity: function() {
             if(!editor.getOption('readOnly')) {
@@ -103,11 +108,11 @@ $(function() {
             switch(assembler) {
                 case "0x10code":
                     console.log("Assembling with 0x10code");
-                    assembler = new DCPU16.Assembler(cpu);
+                    assembler_inst = new DCPU16.Assembler(cpu);
                     try {
-                        assembler.compile(code);
-                        addressMap = assembler.addressMap;
-                        instructionMap = assembler.instructionMap;
+                        assembler_inst.compile(code);
+                        addressMap = assembler_inst.addressMap;
+                        instructionMap = assembler_inst.instructionMap;
                         notRun = true;
 			initial_mem = cpu.mem.slice();
                         return true;
@@ -116,7 +121,7 @@ $(function() {
                         $('#error span').text(e.message);
 
                         try {
-                            errorLine = editor.setLineClass(assembler.instructionMap[assembler.instruction - 1] - 1, null, 'errorLine');
+                            errorLine = editor.setLineClass(assembler_inst.instructionMap[assembler_inst.instruction - 1] - 1, null, 'errorLine');
                         } catch(e) {}
 
                         $('#error').show();
@@ -126,7 +131,7 @@ $(function() {
                 case "dcputoolchain":
                     console.log("Assembling with dcputoolchain");
                     var data = {
-                        assembler: 'dcputoolchain',
+                        assembler_inst: 'dcputoolchain',
                         file:       code
                     };
                     $.ajax({
@@ -174,7 +179,7 @@ $(function() {
                 $('#debugDump').val(cpu.getDump());
                     
                 editor.setLineClass(pcLine, null, null);
-                pcLine = editor.setLineClass(assembler.instructionMap[assembler.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
+                pcLine = editor.setLineClass(assembler_inst.instructionMap[assembler_inst.addressMap[cpu.mem.pc]] - 1, null, 'pcLine');
             } catch(e) {
                 
             }
@@ -243,8 +248,8 @@ $(function() {
     function runtimeError(e) {
         $('#error strong').text('Runtime error: ');
         $('#error span').text(e.message);
-        errorLine = editor.setLineClass(assembler.instructionMap[
-            assembler.addressMap[cpu.mem.pc] - 1], null, 'errorLine');
+        errorLine = editor.setLineClass(assembler_inst.instructionMap[
+            assembler_inst.addressMap[cpu.mem.pc] - 1], null, 'errorLine');
         $('#error').show();
         end();
     }
